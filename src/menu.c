@@ -48,11 +48,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_UPTIME, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_UPTIME, SCREEN_CONTRAST, SCREEN_MAX } menu_screen;
 
 static menu_screen current_menu_screen = SCREEN_MAIN;
 static uint32_t    last_screen_refresh = 0;
-static bool        cal_save_screen     = false;
+static uint8_t     menu_level          = 0;
+static uint32_t    last_encoder_value  = 0;             
 
 static void menu_force_redraw() { last_screen_refresh = 0; }
 
@@ -81,22 +82,28 @@ static void menu_draw()
     case SCREEN_PPB:
         // Screen with ppb
         ppb = frequency_get_ppb();
-        LCD_Puts(1, 0, "PPB    ");
+        LCD_Puts(1, 0, "PPB:   ");
         LCD_Puts(0, 1, "        ");
         sprintf(screen_buffer, "%ld.%02d", ppb / 100, abs(ppb) % 100);
         LCD_Puts(0, 1, screen_buffer);
         break;
     case SCREEN_PWM:
         // Screen with current PPM
-        LCD_Puts(1, 0, "PWM    ");
+        LCD_Puts(1, 0, "PWM:   ");
         LCD_Puts(0, 1, "        ");
         sprintf(screen_buffer, "%ld", TIM1->CCR2);
         LCD_Puts(0, 1, screen_buffer);
         break;
     case SCREEN_UPTIME:
-        LCD_Puts(1, 0, "UPTIME ");
+        LCD_Puts(1, 0, "UPTIME:");
         LCD_Puts(0, 1, "        ");
         sprintf(screen_buffer, "%ld", device_uptime);
+        LCD_Puts(0, 1, screen_buffer);
+        break;
+    case SCREEN_CONTRAST:
+        LCD_Puts(1, 0, menu_level == 0 ? "CNTRST:":"CNTRST?");
+        LCD_Puts(0, 1, "        ");
+        sprintf(screen_buffer, "%d", contrast);
         LCD_Puts(0, 1, screen_buffer);
         break;
     }
@@ -106,26 +113,85 @@ void menu_run()
 {
 
     // Select view based on rotary encoder value
-    menu_screen new_view = TIM3->CCR1 / 2 % SCREEN_MAX;
-    if (new_view != current_menu_screen) {
-        current_menu_screen = new_view;
-        LCD_Clear();
-        menu_force_redraw();
+    //menu_screen new_view = TIM3->CCR1 / 2 % SCREEN_MAX;
+    uint32_t new_encoder_value = TIM3->CNT / 2;
+    if(new_encoder_value != last_encoder_value)
+    {
+        if(menu_level == 0)
+        {   // Main menu => change menu screen
+            menu_screen new_view =  new_encoder_value % SCREEN_MAX;
+            if (new_view != current_menu_screen) {
+                current_menu_screen = new_view;
+                LCD_Clear();
+                menu_force_redraw();
+            }
+        }
+        else
+        {   // Sub menu
+            switch(current_menu_screen)
+            {
+                case SCREEN_PWM:
+                    // Go back to main menu
+                    LCD_Clear();
+                    menu_force_redraw();
+                    menu_level = 0;
+                    break;
+                case SCREEN_CONTRAST:
+                    // Update contrast
+                    if(new_encoder_value < last_encoder_value || last_encoder_value == 0)
+                    {   // Decrease
+                        if(contrast>0)
+                            contrast--;
+                    }
+                    else
+                    {
+                        if(contrast < 100)
+                            contrast++;
+                    }
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                default:
+                    break;
+            }
+        }
+        last_encoder_value = new_encoder_value;
     }
 
     uint32_t now = HAL_GetTick();
 
     if (rotary_get_click()) {
-        if (!cal_save_screen) {
-            cal_save_screen = true;
-            LCD_Clear();
+        if (menu_level == 0) {
+            switch(current_menu_screen)
+            {
+                case SCREEN_PWM:
+                case SCREEN_CONTRAST:
+                    menu_level = 1;
+                    LCD_Clear();
+                    break;
+                default:
+                    break;
+            }
         } else {
-            ee_storage.pwm = TIM1->CCR2;
-            EE_Write();
-            cal_save_screen = false;
+            switch(current_menu_screen)
+            {
+                case SCREEN_PWM:
+                    ee_storage.pwm = TIM1->CCR2;
+                    EE_Write();
+                    break;
+                case SCREEN_CONTRAST:
+                    if(ee_storage.contrast != contrast)
+                    {   // Contrast has changed => save it to eeprom
+                        ee_storage.contrast = contrast;
+                        EE_Write();
+                    }
+                    break;
+                default:
+                    break;
+            }
             LCD_Clear();
+            menu_level = 0;
         }
-
         menu_force_redraw();
     }
 
@@ -145,7 +211,7 @@ void menu_run()
             ;
         menu_printing = 1;
 
-        if (cal_save_screen) {
+        if (menu_level > 0 && current_menu_screen == SCREEN_PWM) {
             LCD_Puts(0, 0, " PRESS ");
             LCD_Puts(0, 1, "TO SAVE");
         } else {

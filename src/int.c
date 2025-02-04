@@ -14,6 +14,7 @@ volatile uint32_t num_samples      = 0;
 volatile uint32_t timer_overflows  = 0;
 volatile uint32_t device_uptime    = 0;
 volatile uint8_t  first            = 1;
+volatile uint8_t  contrast         = 0;
 volatile uint32_t last_pps         = 0;
 
 const char spinner[]   = "\2\3\4";

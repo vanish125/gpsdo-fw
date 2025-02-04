@@ -4,6 +4,7 @@
 #include "frequency.h"
 #include "gps.h"
 #include "menu.h"
+#include "int.h"
 #include "tim.h"
 #include <math.h>
 #include <stdbool.h>
@@ -48,6 +49,10 @@ void gpsdo(void)
         ee_storage.pwm = 38000;
     }
     TIM1->CCR2 = ee_storage.pwm;
+    if (ee_storage.contrast == 0xff) {
+        ee_storage.contrast = 75;
+    }
+    contrast = ee_storage.contrast;
 
     LCD_Init();
 
@@ -67,8 +72,18 @@ void gpsdo(void)
     HAL_TIM_Base_Start(&htim3);
     HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
 
+    int contrast_pwm = 0;
+    GPIO_PinState contrast_pin_state;
     while (1) {
         gps_read();
         menu_run();
+
+        contrast_pin_state = (contrast_pwm < (contrast)) ? GPIO_PIN_RESET : GPIO_PIN_SET;
+        HAL_GPIO_WritePin(LCD_CONTRAST_GPIO_Port, LCD_CONTRAST_Pin, contrast_pin_state);
+        contrast_pwm++;
+        if(contrast_pwm>=100)
+        {
+            contrast_pwm = 0;
+        }
     }
 }
