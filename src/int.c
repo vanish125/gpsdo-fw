@@ -16,6 +16,7 @@ volatile uint32_t device_uptime    = 0;
 volatile uint8_t  first            = 1;
 volatile uint8_t  contrast         = 0;
 volatile uint32_t last_pps         = 0;
+volatile bool     blink_toggle     = false;
 
 const char spinner[]   = "\2\3\4";
 uint8_t    pps_spinner = 0;
@@ -30,7 +31,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         {
             if(!menu_printing)
             {
-                LCD_Puts(0,0,"\5");
+                if(blink_toggle)
+                {
+                    LCD_Puts(0,0,"\5");
+                }
+                else
+                {
+                    LCD_Puts(0,0," ");
+                }
+                blink_toggle = !blink_toggle;
             }
         }
     }

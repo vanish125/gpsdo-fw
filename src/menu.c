@@ -112,8 +112,7 @@ static void menu_draw()
 void menu_run()
 {
 
-    // Select view based on rotary encoder value
-    //menu_screen new_view = TIM3->CCR1 / 2 % SCREEN_MAX;
+    // Detect rotary encoder value change
     uint32_t new_encoder_value = TIM3->CNT / 2;
     if(new_encoder_value != last_encoder_value)
     {
