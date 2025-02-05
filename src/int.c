@@ -16,6 +16,8 @@ volatile uint32_t device_uptime    = 0;
 volatile uint8_t  first            = 1;
 volatile uint8_t  contrast         = 0;
 volatile uint32_t last_pps         = 0;
+volatile uint32_t last_pps_out     = 0;
+volatile bool     pps_out_up       = false;
 volatile bool     blink_toggle     = false;
 
 const char spinner[]   = "\2\3\4";
@@ -27,6 +29,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         timer_overflows++;
     } else if (htim == &htim2) {
         device_uptime++;
+        // PPS output signal
+        HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 1);
+        last_pps_out = HAL_GetTick();
+        pps_out_up = true;
+
         if(HAL_GetTick() - last_pps > 1500)
         {
             if(!menu_printing)

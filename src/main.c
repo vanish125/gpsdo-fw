@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/// All times in ms
+#define PPS_PULSE_WIDTH 100
+
 void warmup()
 {
     char     buf[9];
@@ -75,6 +78,13 @@ void gpsdo(void)
     int contrast_pwm = 0;
     GPIO_PinState contrast_pin_state;
     while (1) {
+        uint32_t now = HAL_GetTick();
+        if(pps_out_up && now-last_pps_out >= PPS_PULSE_WIDTH)
+        {
+            HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 0);
+            pps_out_up = false;
+        }
+
         gps_read();
         menu_run();
 

@@ -74,6 +74,8 @@ void Error_Handler(void);
 #define GPS_RX_GPIO_Port GPIOB
 #define PPS_Pin GPIO_PIN_8
 #define PPS_GPIO_Port GPIOA
+#define PPS_OUTPUT_Pin GPIO_PIN_1
+#define PPS_OUTPUT_GPIO_Port GPIOB
 #define VCO_CONTROL_Pin GPIO_PIN_9
 #define VCO_CONTROL_GPIO_Port GPIOA
 #define LCD_CONTRAST_Pin GPIO_PIN_10
