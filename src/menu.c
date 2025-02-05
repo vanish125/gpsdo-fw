@@ -48,7 +48,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_UPTIME, SCREEN_CONTRAST, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_MAX } menu_screen;
 
 static menu_screen current_menu_screen = SCREEN_MAIN;
 static uint32_t    last_screen_refresh = 0;
@@ -98,6 +98,12 @@ static void menu_draw()
         LCD_Puts(1, 0, "UPTIME:");
         LCD_Puts(0, 1, "        ");
         sprintf(screen_buffer, "%ld", device_uptime);
+        LCD_Puts(0, 1, screen_buffer);
+        break;
+    case SCREEN_FRAMES:
+        LCD_Puts(1, 0, "GGA FR:");
+        LCD_Puts(0, 1, "        ");
+        sprintf(screen_buffer, "%ld", gga_frames);
         LCD_Puts(0, 1, screen_buffer);
         break;
     case SCREEN_CONTRAST:

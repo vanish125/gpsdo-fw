@@ -11,10 +11,11 @@
 
 #define MAX_GPS_LINE 512
 
-char   gps_line[MAX_GPS_LINE];
-char   gps_time[9]  = { '\0' };
-char   num_sats     = 0;
-size_t gps_line_len = 0;
+char     gps_line[MAX_GPS_LINE];
+char     gps_time[9]  = { '\0' };
+char     num_sats     = 0;
+uint32_t gga_frames   = 0;
+size_t   gps_line_len = 0;
 
 #define FIFO_BUFFER_SIZE 256
 
@@ -125,6 +126,7 @@ void gps_parse(char* line)
         strtok(NULL, ","); // Fix
 
         num_sats = atoi(strtok(NULL, ",")); // Num sats used
+        gga_frames++;
     }
 }
 
