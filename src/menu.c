@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "LCD.h"
 #include "eeprom.h"
@@ -48,9 +49,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
 
 static menu_screen current_menu_screen = SCREEN_MAIN;
+static menu_gps_screen current_menu_gps_screen = SCREEN_GPS_TIME;
 static uint32_t    last_screen_refresh = 0;
 static uint8_t     menu_level          = 0;
 static uint32_t    last_encoder_value  = 0;             
@@ -93,6 +96,62 @@ static void menu_draw()
         LCD_Puts(0, 1, "        ");
         sprintf(screen_buffer, "%ld", TIM1->CCR2);
         LCD_Puts(0, 1, screen_buffer);
+        break;
+    case SCREEN_GPS:
+        if(menu_level == 0)
+        {
+            sprintf(screen_buffer, "GPS:%02d\4", num_sats);
+            LCD_Puts(1, 0, screen_buffer);
+            LCD_Puts(0, 1, gps_time);
+        }
+        else
+        {
+            switch (current_menu_gps_screen)
+            {
+                default:
+                case SCREEN_GPS_TIME:
+                    LCD_Puts(1, 0, "Time:");
+                    LCD_Puts(0, 1, gps_time);
+                    break;
+                case SCREEN_GPS_LATITUDE:
+                    sprintf(screen_buffer, "Lat.: %s", gps_n_s);
+                    LCD_Puts(1, 0, screen_buffer);
+                    LCD_Puts(0, 1, gps_latitude);
+                    break;
+                case SCREEN_GPS_LONGITUDE:
+                    sprintf(screen_buffer, "Long.:%s", gps_e_w);
+                    LCD_Puts(1, 0, screen_buffer);
+                    LCD_Puts(0, 1, gps_longitude);
+                    break;
+                case SCREEN_GPS_ALTITUDE:
+                    {
+                        double alt_int = floor(gps_msl_altitude);
+                        double alt_frac = (gps_msl_altitude - alt_int)*10;
+                        LCD_Puts(1, 0, "Alt.:");
+                        sprintf(screen_buffer, "%d.%d", ((int)alt_int), ((int)alt_frac));
+                        LCD_Puts(0, 1, screen_buffer);
+                    }
+                    break;
+                case SCREEN_GPS_GEOID:
+                    {
+                        double geoid_int = floor(gps_geoid_separation);
+                        double geoid_frac = (gps_geoid_separation - geoid_int)*10;
+                        LCD_Puts(1, 0, "Geoid:");
+                        sprintf(screen_buffer, "%d.%d", ((int)geoid_int), ((int)geoid_frac));
+                        LCD_Puts(0, 1, screen_buffer);
+                    }
+                    break;
+                case SCREEN_GPS_SATELITES:
+                    LCD_Puts(1, 0, "Sat. #:");
+                    sprintf(screen_buffer, "%02d", num_sats);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_GPS_HDOP:
+                    LCD_Puts(1, 0, "HDOP:");
+                    LCD_Puts(0, 1, gps_hdop);
+                    break;
+            }
+        }
         break;
     case SCREEN_UPTIME:
         LCD_Puts(1, 0, "UPTIME:");
@@ -141,6 +200,17 @@ void menu_run()
                     menu_force_redraw();
                     menu_level = 0;
                     break;
+                case SCREEN_GPS:
+                    {
+                        // GPS view => change gps menu
+                        menu_gps_screen new_view =  new_encoder_value % SCREEN_GPS_MAX;
+                        if (new_view != current_menu_gps_screen) {
+                            current_menu_gps_screen = new_view;
+                            LCD_Clear();
+                            menu_force_redraw();
+                        }
+                    }
+                    break;
                 case SCREEN_CONTRAST:
                     // Update contrast
                     if(new_encoder_value < last_encoder_value || last_encoder_value == 0)
@@ -169,6 +239,9 @@ void menu_run()
         if (menu_level == 0) {
             switch(current_menu_screen)
             {
+                case SCREEN_GPS:
+                     current_menu_gps_screen = last_encoder_value % SCREEN_GPS_MAX;
+                     /* FALLTHROUGH */
                 case SCREEN_PWM:
                 case SCREEN_CONTRAST:
                     menu_level = 1;
