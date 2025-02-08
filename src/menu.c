@@ -51,9 +51,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
+typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_MAX } menu_ppb_screen;
 
 static menu_screen current_menu_screen = SCREEN_MAIN;
 static menu_gps_screen current_menu_gps_screen = SCREEN_GPS_TIME;
+static menu_ppb_screen current_menu_ppb_screen = SCREEN_PPB_MEAN;
 static uint32_t    last_screen_refresh = 0;
 static uint8_t     menu_level          = 0;
 static uint32_t    last_encoder_value  = 0;             
@@ -84,11 +86,58 @@ static void menu_draw()
         break;
     case SCREEN_PPB:
         // Screen with ppb
-        ppb = frequency_get_ppb();
-        LCD_Puts(1, 0, "PPB:   ");
-        LCD_Puts(0, 1, "        ");
-        sprintf(screen_buffer, "%ld.%02d", ppb / 100, abs(ppb) % 100);
-        LCD_Puts(0, 1, screen_buffer);
+        if(menu_level == 0)
+        {
+            ppb = frequency_get_ppb();
+            LCD_Puts(1, 0, "PPB:   ");
+            LCD_Puts(0, 1, "        ");
+            sprintf(screen_buffer, "%ld.%02d", ppb / 100, abs(ppb) % 100);
+            LCD_Puts(0, 1, screen_buffer);
+        }
+        else
+        {
+            // Clear line 2
+            LCD_Puts(0, 1, "        ");
+            switch (current_menu_ppb_screen)
+            {
+                default:
+                case SCREEN_PPB_MEAN:
+                    ppb = frequency_get_ppb();
+                    LCD_Puts(1, 0, "Mean:");
+                    LCD_Puts(0, 1, "        ");
+                    sprintf(screen_buffer, "%ld.%02d", ppb / 100, abs(ppb) % 100);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPB_INST:
+                    {
+                    LCD_Puts(1, 0, "Inst:");
+                    int32_t ppb_inst = (int64_t)ppb_error * 1000000000 * 100 / ((int64_t)HAL_RCC_GetHCLKFreq());
+                    sprintf(screen_buffer, "%ld.%02d", ppb_inst / 100, abs(ppb_inst) % 100);
+                    LCD_Puts(0, 1, screen_buffer);
+                    }
+                    break;
+                case SCREEN_PPB_FREQUENCY:
+                    LCD_Puts(1, 0, "Freq:");
+                    sprintf(screen_buffer, "%ld", ppb_frequency);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPB_ERROR:
+                    LCD_Puts(1, 0, "Error:");
+                    sprintf(screen_buffer, "%ld", ppb_error);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPB_CORRECTION:
+                    LCD_Puts(1, 0, "Corr.:");
+                    sprintf(screen_buffer, "%ld", ppb_correction);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPB_MILLIS:
+                    LCD_Puts(1, 0, "Millis:");
+                    sprintf(screen_buffer, "%ld", ppb_millis);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+            }
+        }
         break;
     case SCREEN_PWM:
         // Screen with current PPM
@@ -106,6 +155,8 @@ static void menu_draw()
         }
         else
         {
+            // Clear line 2
+            LCD_Puts(0, 1, "        ");
             switch (current_menu_gps_screen)
             {
                 default:
@@ -200,6 +251,17 @@ void menu_run()
                     menu_force_redraw();
                     menu_level = 0;
                     break;
+                case SCREEN_PPB:
+                    {
+                        // PPB view => change ppb menu
+                        menu_ppb_screen new_view =  new_encoder_value % SCREEN_PPB_MAX;
+                        if (new_view != current_menu_ppb_screen) {
+                            current_menu_ppb_screen = new_view;
+                            LCD_Clear();
+                            menu_force_redraw();
+                        }
+                    }
+                    break;
                 case SCREEN_GPS:
                     {
                         // GPS view => change gps menu
@@ -239,9 +301,16 @@ void menu_run()
         if (menu_level == 0) {
             switch(current_menu_screen)
             {
+                case SCREEN_PPB:
+                    current_menu_ppb_screen = last_encoder_value % SCREEN_PPB_MAX;
+                    menu_level = 1;
+                    LCD_Clear();
+                    break;
                 case SCREEN_GPS:
-                     current_menu_gps_screen = last_encoder_value % SCREEN_GPS_MAX;
-                     /* FALLTHROUGH */
+                    current_menu_gps_screen = last_encoder_value % SCREEN_GPS_MAX;
+                    menu_level = 1;
+                    LCD_Clear();
+                    break;
                 case SCREEN_PWM:
                 case SCREEN_CONTRAST:
                     menu_level = 1;

@@ -20,6 +20,10 @@ volatile uint32_t last_pps_out     = 0;
 volatile bool     pps_out_up       = false;
 volatile bool     pps_led_toogle   = false;
 volatile bool     blink_toggle     = false;
+volatile int32_t  ppb_frequency    = 0;
+volatile int32_t  ppb_error        = 0;
+volatile int32_t  ppb_correction   = 0;
+volatile int32_t  ppb_millis       = 0;
 
 const char spinner[]   = "\2\3\4";
 uint8_t    pps_spinner = 0;
@@ -59,15 +63,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 // This gets run each time PPS goes high
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 {
-    uint32_t current_tick = HAL_GetTick();
     if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 
         capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
 
+        uint32_t current_tick = HAL_GetTick();
         if (allow_adjustment) {
             // Ignore first capture and do a sanity check on elapsed time since previous PPS
             if (!first && current_tick - last_pps < 1300) {
-                frequency = capture - previous_capture + (TIM1->ARR + 1) * timer_overflows;
+                frequency = capture - previous_capture + /*(TIM1->ARR + 1)*/ 65536 * timer_overflows;
 
                 int32_t current_error = frequency_get_error();
 
@@ -87,7 +91,16 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 
                     // Apply it
                     TIM1->CCR2 -= adjustment;
+
+                    ppb_correction = -adjustment;
                 }
+                else {
+                    ppb_correction = 0;
+                }
+                // Save values for ppb display
+                ppb_frequency = frequency;
+                ppb_error = current_error;
+                ppb_millis = current_tick - last_pps - 1000;
 
                 circbuf_add(&circular_buffer, frequency_get_error());
                 if (num_samples < CIRCULAR_BUFFER_LEN)
