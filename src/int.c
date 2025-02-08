@@ -18,6 +18,7 @@ volatile uint8_t  contrast         = 0;
 volatile uint32_t last_pps         = 0;
 volatile uint32_t last_pps_out     = 0;
 volatile bool     pps_out_up       = false;
+volatile bool     pps_led_toogle   = false;
 volatile bool     blink_toggle     = false;
 
 const char spinner[]   = "\2\3\4";
@@ -33,6 +34,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 1);
         last_pps_out = HAL_GetTick();
         pps_out_up = true;
+        // PPS LED1 blink
+        HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, pps_led_toogle);
+        pps_led_toogle = !pps_led_toogle;
 
         if(HAL_GetTick() - last_pps > 1500)
         {
