@@ -232,7 +232,16 @@ void menu_run()
     uint32_t new_encoder_value = TIM3->CNT / 2;
     if(new_encoder_value != last_encoder_value)
     {
-        int encoder_increment = (((new_encoder_value < last_encoder_value) && (new_encoder_value != 0)) || (last_encoder_value == 0)) ? -1 : +1;
+        int encoder_increment = (new_encoder_value < last_encoder_value)? -1 : +1;
+        // Handle overflow cases
+        if(new_encoder_value == 32767 && last_encoder_value == 0)
+        {
+            encoder_increment = -1;
+        }
+        else if (new_encoder_value == 0 && last_encoder_value == 32767)
+        {
+            encoder_increment = +1;
+        }
         if(menu_level == 0)
         {   // Main menu => change menu screen
             current_menu_screen =  (current_menu_screen + encoder_increment) % SCREEN_MAX;
