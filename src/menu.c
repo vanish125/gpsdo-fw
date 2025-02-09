@@ -232,14 +232,13 @@ void menu_run()
     uint32_t new_encoder_value = TIM3->CNT / 2;
     if(new_encoder_value != last_encoder_value)
     {
+        int encoder_increment = (((new_encoder_value < last_encoder_value) && (new_encoder_value != 0)) || (last_encoder_value == 0)) ? -1 : +1;
         if(menu_level == 0)
         {   // Main menu => change menu screen
-            menu_screen new_view =  new_encoder_value % SCREEN_MAX;
-            if (new_view != current_menu_screen) {
-                current_menu_screen = new_view;
-                LCD_Clear();
-                menu_force_redraw();
-            }
+            current_menu_screen =  (current_menu_screen + encoder_increment) % SCREEN_MAX;
+            if(current_menu_screen >= SCREEN_MAX) current_menu_screen = SCREEN_MAX-1; // Roll over for first sceen - 1
+            LCD_Clear();
+            menu_force_redraw();
         }
         else
         {   // Sub menu
@@ -254,37 +253,26 @@ void menu_run()
                 case SCREEN_PPB:
                     {
                         // PPB view => change ppb menu
-                        menu_ppb_screen new_view =  new_encoder_value % SCREEN_PPB_MAX;
-                        if (new_view != current_menu_ppb_screen) {
-                            current_menu_ppb_screen = new_view;
-                            LCD_Clear();
-                            menu_force_redraw();
-                        }
+                        current_menu_ppb_screen =  (current_menu_ppb_screen + encoder_increment) % SCREEN_PPB_MAX;
+                        if(current_menu_ppb_screen >= SCREEN_PPB_MAX) current_menu_ppb_screen = SCREEN_PPB_MAX-1; // Roll over for first sceen - 1
+                        LCD_Clear();
+                        menu_force_redraw();
                     }
                     break;
                 case SCREEN_GPS:
                     {
                         // GPS view => change gps menu
-                        menu_gps_screen new_view =  new_encoder_value % SCREEN_GPS_MAX;
-                        if (new_view != current_menu_gps_screen) {
-                            current_menu_gps_screen = new_view;
-                            LCD_Clear();
-                            menu_force_redraw();
-                        }
+                        current_menu_gps_screen =  (current_menu_gps_screen + encoder_increment) % SCREEN_GPS_MAX;
+                        if(current_menu_gps_screen >= SCREEN_GPS_MAX) current_menu_gps_screen = SCREEN_GPS_MAX-1; // Roll over for first sceen - 1
+                        LCD_Clear();
+                        menu_force_redraw();
                     }
                     break;
                 case SCREEN_CONTRAST:
                     // Update contrast
-                    if(new_encoder_value < last_encoder_value || last_encoder_value == 0)
-                    {   // Decrease
-                        if(contrast>0)
-                            contrast--;
-                    }
-                    else
-                    {
-                        if(contrast < 100)
-                            contrast++;
-                    }
+                    contrast += encoder_increment;
+                    if(contrast < 0) contrast = 0;
+                    if(contrast > 100) contrast = 100;
                     LCD_Clear();
                     menu_force_redraw();
                     break;
@@ -302,12 +290,10 @@ void menu_run()
             switch(current_menu_screen)
             {
                 case SCREEN_PPB:
-                    current_menu_ppb_screen = last_encoder_value % SCREEN_PPB_MAX;
                     menu_level = 1;
                     LCD_Clear();
                     break;
                 case SCREEN_GPS:
-                    current_menu_gps_screen = last_encoder_value % SCREEN_GPS_MAX;
                     menu_level = 1;
                     LCD_Clear();
                     break;
