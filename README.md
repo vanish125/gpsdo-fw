@@ -2,7 +2,7 @@
 
 This is an alternative firmware for the BH3SAP GPSDO sold on various platforms.
 
-![Image of the GPSDO running this firmware](https://github.com/dankar/gpsdo-fw/blob/main/doc/gpsdo.jpg?raw=true)
+![Image of the GPSDO running this firmware](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo.jpg?raw=true)
 
 ### Theory of operation
 
@@ -20,21 +20,9 @@ It's fairly slow to reach a steady state, and it can probably easily be sped up 
 
 The displayed PPB error is a long running average. It counts the number of clock ticks over 128 seconds and compares it to the expected (128*SYSCLK)
 
-### Flashing the firmware
-
-To flash this alternative firmware in your GPSDO, you will need to open it to access the bluepill board inside it.
-
-To do so, you only need to remove the 4 screews at the top left and right sides of the front and bacck pannels of your GPSDO.
-
-You now have access to the bluepill board, but you need to bend the 4 pins of the programmation header to the top so that you can plug Dupont wires to that header.
-
-Now you need to download and install [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
-
-
-
 ### Usage
 
-Power on the device with GPS antenna connected. Wait a long while for the PPB to reach close to zero. The used PWM value can then be stored in flash by going to `PWM`menu and press the encoder twice (a message will be shown after the first press).
+Power on the device with GPS antenna connected. Wait a long while for the PPB to reach close to zero. The used PWM value can then be stored in flash by going to `PWM` menu and press the encoder twice (a message will be shown after the first press).
 
 This PWM will then be used on the next boot, and if no GPS antenna is connected, it will not be adjusted further.
 
@@ -66,6 +54,24 @@ Here is the menu tree :
 - GGA Frames Screen: the number of GGA frames received from the GPS module since last boot
 - Contrast Screen : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
 - Version Screen : shows the current firmware version
+
+### Flashing the firmware
+
+To flash this alternative firmware in your GPSDO you will need :
+- A [ST-Link V2 dongle](https://github.com/fredzo/gpsdo-fw/blob/main/doc/st-link-v2.png?raw=true)
+- The [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
+
+First you need to open it to access the bluepill board inside it.
+
+To do so, you only need to remove the 4 screews at the top left and right sides of the front and bacck pannels of your GPSDO:
+![Open Case](https://github.com/fredzo/gpsdo-fw/blob/main/doc/open-case.jpg?raw=true)
+
+You now have access to the bluepill board, but you need to bend the 4 pins of the programmation header to the top so that you can plug Dupont wires to that header:
+![Bend pins](https://github.com/fredzo/gpsdo-fw/blob/main/doc/st-link-connection.jpg?raw=true)
+
+You can now launch the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html) click `Connect`, click `Open File`, select the `gpsdo.bin` file downloaded in the `Release` section and hit `Download` in STM32CubeProgrammer:
+![Bend pins](https://github.com/fredzo/gpsdo-fw/blob/main/doc/stm32-cube-programmer.png?raw=true)
+
 
 ### Building and flashing
 
