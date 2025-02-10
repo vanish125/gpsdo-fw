@@ -20,13 +20,25 @@ It's fairly slow to reach a steady state, and it can probably easily be sped up 
 
 The displayed PPB error is a long running average. It counts the number of clock ticks over 128 seconds and compares it to the expected (128*SYSCLK)
 
+### Flashing the firmware
+
+To flash this alternative firmware in your GPSDO, you will need to open it to access the bluepill board inside it.
+
+To do so, you only need to remove the 4 screews at the top left and right sides of the front and bacck pannels of your GPSDO.
+
+You now have access to the bluepill board, but you need to bend the 4 pins of the programmation header to the top so that you can plug Dupont wires to that header.
+
+Now you need to download and install [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
+
+
+
 ### Usage
 
 Power on the device with GPS antenna connected. Wait a long while for the PPB to reach close to zero. The used PWM value can then be stored in flash by going to `PWM`menu and press the encoder twice (a message will be shown after the first press).
 
 This PWM will then be used on the next boot, and if no GPS antenna is connected, it will not be adjusted further.
 
-The [[original manual|https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766ef8beb795172a6fa325e783569361913e/doc/gpsdo-documentation.pdf]] for the device talks about running the device without a GPS antenna after calibration, but I would advice against that since the oscillator seems sensitive to both ambient temperature, vibrations and orientation. Best results will be had when the GPS antenna is connected at all times.
+The [original manual](https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766ef8beb795172a6fa325e783569361913e/doc/gpsdo-documentation.pdf) for the device talks about running the device without a GPS antenna after calibration, but I would advice against that since the oscillator seems sensitive to both ambient temperature, vibrations and orientation. Best results will be had when the GPS antenna is connected at all times.
 
 ### Menu system
 
