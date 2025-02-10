@@ -17,6 +17,9 @@
 #define SCREEN_REFRESH_TIME  500
 #define VCO_ADJUSTMENT_DELAY 3000
 
+// Firmware version tag
+#define FIRMWARE_VERSION    "v0.1.1"
+
 volatile uint32_t rotary_down_time      = 0;
 volatile uint32_t rotary_up_time        = 0;
 volatile bool     rotary_press_detected = 0;
@@ -49,7 +52,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_MAX } menu_ppb_screen;
 
@@ -221,6 +224,10 @@ static void menu_draw()
         LCD_Puts(0, 1, "        ");
         sprintf(screen_buffer, "%d", contrast);
         LCD_Puts(0, 1, screen_buffer);
+        break;
+    case SCREEN_VERSION:
+        LCD_Puts(1, 0, "Vers.:");
+        LCD_Puts(0, 1, FIRMWARE_VERSION);
         break;
     }
 }
