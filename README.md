@@ -14,7 +14,7 @@ The [original manual](https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766e
 
 ### Menu system
 
-This alternative firmware has a 2 level menu system. Movinf from one menu item to another is done by turning the rotary encoder, and entering a givem menu (when applicable) is done by pressing the encoder.
+This alternative firmware has a 2 level menu system. Moving from one menu item to another is done by turning the rotary encoder, and entering a givem menu (when applicable) is done by pressing the encoder.
 
 Here is the menu tree :
 - `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
@@ -28,12 +28,12 @@ Here is the menu tree :
 - `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
 - `GPS Screen`: displays the number of detected satellites and the current GPS time
   - `Time`: the current GPS time
-  - `Latitude`: the GPS detected latitude (with form ddmm(.)mmmm)
-  - `Longitude`: the GPS detected longitude (with form ddmm(.)mmmm)
+  - `Latitude`: the GPS detected latitude (format: ddmm(.)mmmm)
+  - `Longitude`: the GPS detected longitude (format: ddmm(.)mmmm)
   - `Altitude`: the GPS detected altitude (in meters)
   - `Geoid`: the Geoid-to-ellipsoid separation (in meters)
   - `Sat. #`: the numner of satellites
-  - `HDOP`: the current Horizontal Dilution of Precision value
+  - `HDOP`: the current Horizontal Dilution Of Precision value
 - `Uptime Screen` : displays the number of seconds elapsed since last boot
 - `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
 - `Contrast Screen` : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
@@ -64,15 +64,18 @@ You can now launch the [STM32CubeProgrammer software](https://www.st.com/en/deve
 ### Hardware Extensions
 
 #### MCU controlled PPS Output
+An MCU controlled PPS Output has been added on pin PB1. It will output a 100 ms pulse every second, based on the clock of the Bluepill board.
+This output, compared to the PPS output of the original design, is available after boot, even if the GPS module is not yet locked or if the GPS antenna is not connected.
+
+![PPS Out](https://github.com/fredzo/gpsdo-fw/blob/main/doc/pps-output.jpg?raw=true)
 
 #### GPS UART Passthrough
 
 A GPS UART passthrough has been added on UART1: pins PA2 (TX) and PA3 (RX) can be used to communicate with the GPS module. This is bidirectional, so the GPS can be used by a computer or configured via manufacturer software.
 
-![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-passthrough.png?raw=true)
+![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-passthrough.jpg?raw=true)
 
 These two pins and ground can be routed to an external header on the backside of the device, and then plugging in a serial to USB converter when needed.
-
 
 ### Theory of operation
 
