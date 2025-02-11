@@ -95,7 +95,21 @@ The displayed PPB error is a long running average. It counts the number of clock
 
 ### Building
 
+#### Linux / OSX
+
 Clone the repo, update submodules and do the cmake. (Or just download a release) You should not need any other dependencies than arm-none-eabi-gcc. The bluepill can be flashed in multiple ways, check the documentation for it for information. Included is a openocd configuration for connecting to the device via SWD using a JLink adapter.
+
+#### Windows
+
+Developing / building on Windows can be achieved with Visual Studio Code and MSYS2:
+* [Download and install VSCode](https://code.visualstudio.com/download)
+* [Download and install MSYS2](https://www.msys2.org/)
+* In a MSYS2 shell, run `pacman -S mingw-w64-x86_64-arm-none-eabi-gcc` to install arm-none-eabi-gcc toolchain
+* Add `C:\msys64\mingw64\bin` to your Windows PATH
+* Clone the repo and open the project in VSCode
+* Install CMake VSCode extension
+* Use CMake pane to launch build
+* Run `arm-none-eabi-objcopy -O binary build/Release/gpsdo.elf build/Release/gpsdo.bin` in VSCode terminal to convert elf file in bin file
 
 ### USB
 
