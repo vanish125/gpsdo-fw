@@ -33,27 +33,32 @@ The [original manual](https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766e
 This alternative firmware has a 2 level menu system. Movinf from one menu item to another is done by turning the rotary encoder, and entering a givem menu (when applicable) is done by pressing the encoder.
 
 Here is the menu tree :
-- Main Screen: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
-- PPB Screen: displays current PPB value
-  - Mean value: the mean PPB value (running average over 128 seconds)
-  - Instant value: last calculated PPB value
-  - Frequency: the measured current MCU frequency (based on the number ot ticks counted between two GPS PPS pulses, should be around 70 000 000 for 70 MHz)
-  - Error: the last measured frequency error (in Hz)
-  - Correction: the last correction applied to PWM value
-  - Millis: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
-- PWM Screen: the current PWM value, press the encoder twice to save this value to flash memory
-- GPS Screen: displays the number of detected satellites and the current GPS time
-  - Time: the current GPS time
-  - Latitude: the GPS detected latitude (with form ddmm(.)mmmm)
-  - Longitude: the GPS detected longitude (with form ddmm(.)mmmm)
-  - Altitude: the GPS detected altitude (in meters)
-  - Geoid: the Geoid-to-ellipsoid separation (in meters)
-  - Sat. #: the numner of satellites
-  - HDOP: the current Horizontal Dilution of Precision value
-- Uptime Screen : displays the number of seconds elapsed since last boot
-- GGA Frames Screen: the number of GGA frames received from the GPS module since last boot
-- Contrast Screen : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
-- Version Screen : shows the current firmware version
+- `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
+- `PPB Screen`: displays current PPB value
+  - `Mean value`: the mean PPB value (running average over 128 seconds)
+  - `Instant value`: last calculated PPB value
+  - `Frequency`: the measured current MCU frequency (based on the number ot ticks counted between two GPS PPS pulses, should be around 70 000 000 for 70 MHz)
+  - `Error`: the last measured frequency error (in Hz)
+  - `Correction`: the last correction applied to PWM value
+  - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
+- `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
+- `GPS Screen`: displays the number of detected satellites and the current GPS time
+  - `Time`: the current GPS time
+  - `Latitude`: the GPS detected latitude (with form ddmm(.)mmmm)
+  - `Longitude`: the GPS detected longitude (with form ddmm(.)mmmm)
+  - `Altitude`: the GPS detected altitude (in meters)
+  - `Geoid`: the Geoid-to-ellipsoid separation (in meters)
+  - `Sat. #`: the numner of satellites
+  - `HDOP`: the current Horizontal Dilution of Precision value
+- `Uptime Screen` : displays the number of seconds elapsed since last boot
+- `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
+- `Contrast Screen` : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
+- `Version Screen` : shows the current firmware version
+
+#### Main screen
+![Main Screen](https://github.com/fredzo/gpsdo-fw/blob/main/doc/main-screen.jpg?raw=true)
+The top left corner of the `Main Scren` contains an indicator for PPS pulses. Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error. The PPB error will show ">=10" if the error is larger than 9.99, this is only due to a lack of space on the display.
+Bottom line is the current UTC time from GPS module.
 
 ### Flashing the firmware
 
@@ -73,28 +78,9 @@ You can now launch the [STM32CubeProgrammer software](https://www.st.com/en/deve
 ![Bend pins](https://github.com/fredzo/gpsdo-fw/blob/main/doc/stm32-cube-programmer.png?raw=true)
 
 
-### Building and flashing
+### Building
 
 Clone the repo, update submodules and do the cmake. (Or just download a release) You should not need any other dependencies than arm-none-eabi-gcc. The bluepill can be flashed in multiple ways, check the documentation for it for information. Included is a openocd configuration for connecting to the device via SWD using a JLink adapter.
-
-### Display
-
-The display consists of multiple screens. The main one on bootup show this:
-
-```
-|10 1.12
-18:27:55
-```
-
-Top left corner contains an indicator for PPS pulses. Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error. The PPB error will show ">=10" if the error is larger than 9.99, this is only due to a lack of space on the display.
-
-Bottom line is the current UTC time from GPS module.
-
-Rotating the encoder will switch to additional screens showing:
-
-1) Full estimated PPB error
-2) Current PWM 
-3) Uptime of the device, in seconds
 
 ### USB
 
