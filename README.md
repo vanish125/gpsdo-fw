@@ -45,10 +45,10 @@ The top left corner of the `Main Scren` contains an indicator for PPS pulses. Ne
 Bottom line is the current UTC time from GPS module.
 
 #### PPB Menu
-![PPB Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-menu.jpg?raw=true)
+![PPB Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-menu.png?raw=true)
 
 #### GPS Menu
-![GPS Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-menu.jpg?raw=true)
+![GPS Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-menu.png?raw=true)
 
 
 ### Flashing the firmware
