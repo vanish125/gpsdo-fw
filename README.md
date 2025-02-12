@@ -37,6 +37,13 @@ Here is the menu tree :
 - `Uptime Screen` : displays the number of seconds elapsed since last boot
 - `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
 - `Contrast Screen` : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
+- `PPS Screen`: This menu is dedicated to the [MCU controlled PPS output](https://github.com/fredzo/gpsdo-fw?tab=readme-ov-file#mcu-controlled-pps-output) ; it shows the shift with GPS PPS output in milliseconds (top left) and clock cycles (bottom)
+  - `Shift`: the shift between MCU PPS output and GPS PPS output in clock cycles
+  - `Shift milliseconds`: the shift between MCU PPS output and GPS PPS output in milliseconds
+  - `Sync Count`: the number of times the MCU PPS output has been re-synced to the GPS PPS output
+  - `Sync.`: press to set the synchronization activation status (when set to `ON` the MCU PPS Output will be resynced if it deviates from the GPS PPS output of more than `threshold` clock cycles during more than `delay` seconds)
+  - `Delay`: press to set the MCU PPS output synchronisation delay (in seconds)
+  - `Threshold`: press to set the MCU PPS output synchronisation threshold (in clock cycles)
 - `Version Screen` : shows the current firmware version
 
 #### Main screen
