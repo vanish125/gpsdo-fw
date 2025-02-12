@@ -52,13 +52,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_VERSION, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_MAX } menu_ppb_screen;
+typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_MAX } menu_pps_screen;
 
 static menu_screen current_menu_screen = SCREEN_MAIN;
 static menu_gps_screen current_menu_gps_screen = SCREEN_GPS_TIME;
 static menu_ppb_screen current_menu_ppb_screen = SCREEN_PPB_MEAN;
+static menu_pps_screen current_menu_pps_screen = SCREEN_PPS_SHIFT;
 static uint32_t    last_screen_refresh = 0;
 static uint8_t     menu_level          = 0;
 static uint32_t    last_encoder_value  = 0;             
@@ -67,7 +69,7 @@ static void menu_force_redraw() { last_screen_refresh = 0; }
 
 static void menu_draw()
 {
-    char    screen_buffer[13];
+    char    screen_buffer[14];
     char    ppb_string[5];
     int32_t ppb;
 
@@ -107,7 +109,6 @@ static void menu_draw()
                 case SCREEN_PPB_MEAN:
                     ppb = frequency_get_ppb();
                     LCD_Puts(1, 0, "Mean:");
-                    LCD_Puts(0, 1, "        ");
                     sprintf(screen_buffer, "%ld.%02d", ppb / 100, abs(ppb) % 100);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
@@ -225,6 +226,56 @@ static void menu_draw()
         sprintf(screen_buffer, "%d", contrast);
         LCD_Puts(0, 1, screen_buffer);
         break;
+    case SCREEN_PPS:
+        // Screen with pps
+        // Clear line 2
+        LCD_Puts(0, 1, "        ");
+        if(menu_level == 0)
+        {
+            int32_t pps_millis_int = ((int32_t)(pps_millis/10000));
+            sprintf(screen_buffer, "PPS:%03ld", (pps_millis_int < -99) ? abs(pps_millis_int) : pps_millis_int);
+            LCD_Puts(1, 0, screen_buffer);
+            sprintf(screen_buffer, "%ld", pps_error);
+            LCD_Puts(0, 1, screen_buffer);
+        }
+        else
+        {
+            switch (current_menu_pps_screen)
+            {
+                default:
+                case SCREEN_PPS_SHIFT:
+                    LCD_Puts(1, 0, "Shift:");
+                    // Check we have enough space for minus sign
+                    sprintf(screen_buffer, "%ld", (pps_error < -9999999) ? abs(pps_error) : pps_error);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPS_SHIFT_MS:
+                    LCD_Puts(1, 0, "Sft ms:");
+                    sprintf(screen_buffer, "%ld.%04d", pps_millis / 10000, abs(pps_millis) % 10000);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPS_SYNC_COUNT:
+                    LCD_Puts(1, 0, "SynCnt:");
+                    sprintf(screen_buffer, "%ld", pps_sync_count);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPS_SYNC_MODE:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Sync.:":"Sync.?");
+                    LCD_Puts(0, 1, pps_sync_on ? "      ON" : "     OFF");
+                    break;
+                case SCREEN_PPS_SYNC_DELAY:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Delay:":"Delay?");
+                    sprintf(screen_buffer, "%ld", pps_sync_delay);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPS_SYNC_THRESHOLD:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Thrsld:":"Thrsld?");
+                    sprintf(screen_buffer, "%ld", pps_sync_threshold);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+            }
+        }
+        break;
     case SCREEN_VERSION:
         LCD_Puts(1, 0, "Vers.:");
         LCD_Puts(0, 1, FIRMWARE_VERSION);
@@ -256,7 +307,7 @@ void menu_run()
             LCD_Clear();
             menu_force_redraw();
         }
-        else
+        else if(menu_level == 1)
         {   // Sub menu
             switch(current_menu_screen)
             {
@@ -292,6 +343,41 @@ void menu_run()
                     LCD_Clear();
                     menu_force_redraw();
                     break;
+                case SCREEN_PPS:
+                    {
+                        // PPB view => change ppb menu
+                        current_menu_pps_screen =  (current_menu_pps_screen + encoder_increment) % SCREEN_PPS_MAX;
+                        if(current_menu_pps_screen >= SCREEN_PPS_MAX) current_menu_pps_screen = SCREEN_PPS_MAX-1; // Roll over for first sceen - 1
+                        LCD_Clear();
+                        menu_force_redraw();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        else if(menu_level == 2 && current_menu_screen == SCREEN_PPS)
+        {   // Sub-sub menu (only for PPS screen)
+            switch(current_menu_pps_screen)
+            {
+                case SCREEN_PPS_SYNC_MODE:
+                    // Update mode
+                    pps_sync_on = !pps_sync_on;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                case SCREEN_PPS_SYNC_DELAY:
+                    // Update delay
+                    pps_sync_delay += encoder_increment;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                case SCREEN_PPS_SYNC_THRESHOLD:
+                    // Update delay
+                    pps_sync_threshold += encoder_increment;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
                 default:
                     break;
             }
@@ -306,27 +392,23 @@ void menu_run()
             switch(current_menu_screen)
             {
                 case SCREEN_PPB:
-                    menu_level = 1;
-                    LCD_Clear();
-                    break;
                 case SCREEN_GPS:
-                    menu_level = 1;
-                    LCD_Clear();
-                    break;
                 case SCREEN_PWM:
                 case SCREEN_CONTRAST:
+                case SCREEN_PPS:
                     menu_level = 1;
                     LCD_Clear();
                     break;
                 default:
                     break;
             }
-        } else {
+        } else  if (menu_level == 1){
             switch(current_menu_screen)
             {
                 case SCREEN_PWM:
                     ee_storage.pwm = TIM1->CCR2;
                     EE_Write();
+                    menu_level = 0;
                     break;
                 case SCREEN_CONTRAST:
                     if(ee_storage.contrast != contrast)
@@ -334,12 +416,60 @@ void menu_run()
                         ee_storage.contrast = contrast;
                         EE_Write();
                     }
+                    menu_level = 0;
+                    break;
+                case SCREEN_PPS:
+                    switch(current_menu_pps_screen)
+                    {
+                        case SCREEN_PPS_SYNC_MODE:
+                        case SCREEN_PPS_SYNC_DELAY:
+                        case SCREEN_PPS_SYNC_THRESHOLD:
+                            menu_level = 2;
+                            break;
+                        default:
+                            menu_level = 0;
+                            break;
+                    }
+                    break;
+                default:
+                    menu_level = 0;
+                    break;
+            }
+            LCD_Clear();
+        } else  if (menu_level == 2 && current_menu_screen == SCREEN_PPS){
+            switch(current_menu_pps_screen)
+            {
+                case SCREEN_PPS_SYNC_MODE:
+                    if(ee_storage.pps_sync_on != pps_sync_on)
+                    {   // Save changes
+                        ee_storage.pps_sync_on = pps_sync_on;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_PPS_SYNC_DELAY:
+                    if(ee_storage.pps_sync_delay != pps_sync_delay)
+                    {   // Save changes
+                        ee_storage.pps_sync_delay = pps_sync_delay;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_PPS_SYNC_THRESHOLD:
+                    if(ee_storage.pps_sync_threshold != pps_sync_threshold)
+                    {   // Save changes
+                        ee_storage.pps_sync_threshold = pps_sync_threshold;
+                        EE_Write();
+                    }
                     break;
                 default:
                     break;
             }
+            menu_level = 1;
             LCD_Clear();
+        }
+        else
+        {
             menu_level = 0;
+            LCD_Clear();
         }
         menu_force_redraw();
     }

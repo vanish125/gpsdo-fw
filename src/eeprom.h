@@ -8,6 +8,9 @@ typedef struct
 {
     uint16_t pwm;
     uint8_t  contrast;
+    bool     pps_sync_on;
+    uint32_t pps_sync_delay;
+    uint32_t pps_sync_threshold;
 } ee_storage_t;
 
 extern ee_storage_t ee_storage;

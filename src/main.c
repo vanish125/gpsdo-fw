@@ -56,6 +56,15 @@ void gpsdo(void)
         ee_storage.contrast = 75;
     }
     contrast = ee_storage.contrast;
+    pps_sync_on = ee_storage.pps_sync_on;
+    if (ee_storage.pps_sync_delay == 0xffffffff) {
+        ee_storage.pps_sync_delay = 10;
+    }
+    pps_sync_delay = ee_storage.pps_sync_delay;
+    if (ee_storage.pps_sync_threshold == 0xffffffff) {
+        ee_storage.pps_sync_threshold = 30000;
+    }
+    pps_sync_threshold = ee_storage.pps_sync_threshold;
 
     LCD_Init();
 
