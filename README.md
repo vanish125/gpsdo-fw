@@ -81,6 +81,16 @@ You can now launch the [STM32CubeProgrammer software](https://www.st.com/en/deve
 An MCU controlled PPS Output has been added on pin PB1. It will output a 100 ms pulse every second, based on the clock of the Bluepill board.
 This output, compared to the PPS output of the original design, is available after boot, even if the GPS module is not yet locked or if the GPS antenna is not connected.
 
+If `Sync` mode is on, the MCU controlled PPS output will be synchronized to the GPS PPS output as soon as the GPS module gets a fix. The deviation between the two PPS outputs will then be monitored and the MCU controlled PPS output will be resynced to the GPS PPS output as soon as it deviates from more than `threshold` clock cycles during more than `delay` seconds.
+
+The dedicated `PPS` menu allows monitoring the deviation between the MCU controlled PPS output and the GPS PPS output and setting the synchronization parameters:
+  - The `Shift` entry shows the shift between MCU PPS output and GPS PPS output in clock cycles
+  - The `Shift milliseconds` entry shows the shift between MCU PPS output and GPS PPS output in milliseconds
+  - The `Sync Count` entry shows the number of times the MCU PPS output has been re-synced to the GPS PPS output
+  - The `Sync.` entry sets the synchronization activation status (when set to `ON` the MCU PPS Output will be resynced if it deviates from the GPS PPS output of more than `threshold` clock cycles during more than `delay` seconds)
+  - The `Delay` entry sets the MCU PPS output synchronisation delay (in seconds)
+  - The `Threshold` entry sets the MCU PPS output synchronisation threshold (in clock cycles)
+
 ![PPS Out](https://github.com/fredzo/gpsdo-fw/blob/main/doc/pps-output.jpg?raw=true)
 
 #### GPS UART Passthrough
