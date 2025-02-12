@@ -44,6 +44,13 @@ Here is the menu tree :
 The top left corner of the `Main Scren` contains an indicator for PPS pulses. Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error. The PPB error will show ">=10" if the error is larger than 9.99, this is only due to a lack of space on the display.
 Bottom line is the current UTC time from GPS module.
 
+#### PPB Menu
+![PPB Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-menu.jpg?raw=true)
+
+#### GPS Menu
+![GPS Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-menu.jpg?raw=true)
+
+
 ### Flashing the firmware
 
 To flash this alternative firmware in your GPSDO you will need :
