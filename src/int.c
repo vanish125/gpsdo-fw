@@ -33,6 +33,8 @@ volatile int32_t  pps_error        = 0;
 volatile int32_t  pps_millis       = 0;
 volatile uint32_t pps_shift_count  = 0;
 volatile uint32_t pps_sync_count   = 0;
+// Icon to shwow at the top right corner of the screen
+volatile uint8_t  current_state_icon    = ' ';
 
 const char spinner[]   = "\2\3\4";
 uint8_t    pps_spinner = 0;
@@ -43,7 +45,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         timer_overflows++;
         pps_overflows++;
     } else if (htim == &htim2) {
-        device_uptime++;
         // PPS output signal
         HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 1);
         pps_capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
@@ -53,21 +54,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         // PPS LED1 blink
         HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, pps_led_toogle);
         pps_led_toogle = !pps_led_toogle;
+        // Update uptime
+        device_uptime++;
 
         if(HAL_GetTick() - last_pps > 1500)
         {
-            if(!menu_printing)
-            {
-                if(blink_toggle)
-                {
-                    LCD_Puts(0,0,"\5");
-                }
-                else
-                {
-                    LCD_Puts(0,0," ");
-                }
-                blink_toggle = !blink_toggle;
-            }
+            current_state_icon = blink_toggle ? 5 : ' ';
+            blink_toggle = !blink_toggle;
         }
     }
 }
@@ -130,7 +123,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
                 ppb_millis = current_tick - last_pps - 1000;
                 pps_millis = (pps_error/7); // Clock is 70 MHz and we want the value in 10s of microseconds so 10 0000 000 / 70 000 000 = 1/7
 
-                circbuf_add(&circular_buffer, frequency_get_error());
+                circbuf_add(&circular_buffer, current_error);
                 if (num_samples < CIRCULAR_BUFFER_LEN)
                     num_samples++;
             }
@@ -139,12 +132,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
             timer_overflows  = 0;
             first            = 0;
         }
-
+        // Update last PPS time
         last_pps         = current_tick;
-
-        if (!menu_printing) {
-            LCD_PutCustom(0, 0, spinner[pps_spinner]);
-            pps_spinner   = (pps_spinner + 1) % strlen(spinner);
-        }
+        // Update state icon
+        current_state_icon = spinner[pps_spinner];
+        pps_spinner   = (pps_spinner + 1) % strlen(spinner);
     }
 }

@@ -11,11 +11,6 @@
 
 volatile circbuf_t circular_buffer = {0};
 
-// Quick hack to stop the interrupt from printing at the same time as the main loop.
-// This should probably be done with atomic operations, or instead use signalling from the
-// interrupt and let the main loop print the PPS indicator.
-extern volatile int menu_printing;
-
 // Quick and dirty circular buffer
 void circbuf_add(volatile circbuf_t* circbuf, int32_t val)
 {
@@ -48,7 +43,7 @@ int32_t frequency_get_error()
     if (!frequency) {
         return 0;
     } else {
-        int32_t error = frequency - HAL_RCC_GetHCLKFreq();
+        int32_t error = frequency - 70000000 /*HAL_RCC_GetHCLKFreq()*/;
         // Filter out obvious glitches, the OCXO should never be this far from the target frequency
         if (error > 2000 || error < -2000) {
             return 0;

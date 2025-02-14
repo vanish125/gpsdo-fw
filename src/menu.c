@@ -11,6 +11,7 @@
 #include "gps.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "int.h"
+#include "menu.h"
 
 /// All times in ms
 #define DEBOUNCE_TIME        50
@@ -18,12 +19,13 @@
 #define VCO_ADJUSTMENT_DELAY 3000
 
 // Firmware version tag
-#define FIRMWARE_VERSION    "v0.1.1"
+#define FIRMWARE_VERSION    "v0.1.2"
 
 volatile uint32_t rotary_down_time      = 0;
 volatile uint32_t rotary_up_time        = 0;
 volatile bool     rotary_press_detected = 0;
-volatile int      menu_printing         = 0;
+
+
 
 bool rotary_is_down() { return rotary_down_time > rotary_up_time && (HAL_GetTick() - rotary_down_time) > DEBOUNCE_TIME; }
 
@@ -485,10 +487,8 @@ void menu_run()
 
         last_screen_refresh = now;
 
-        // Not very effective spinlock...
-        while (menu_printing == 1)
-            ;
-        menu_printing = 1;
+        // Display state icon
+        LCD_PutCustom(0,0,current_state_icon);
 
         if (menu_level > 0 && current_menu_screen == SCREEN_PWM) {
             LCD_Puts(0, 0, " PRESS ");
@@ -496,7 +496,5 @@ void menu_run()
         } else {
             menu_draw();
         }
-
-        menu_printing = 0;
     }
 }
