@@ -78,6 +78,23 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
         if (allow_adjustment) {
             // Ignore first capture and do a sanity check on elapsed time since previous PPS
             if (!first && current_tick - last_pps < 1300) {
+                // See if we need to resync MCU PPS Out
+                pps_error = (capture - pps_capture + /*(TIM1->ARR + 1)*/ 65536 * pps_overflows) - 70000000 /*HAL_RCC_GetHCLKFreq()*/;
+                if(pps_sync_on && (abs(pps_error) >= pps_sync_threshold))
+                {
+                    pps_shift_count++;
+                    if(pps_shift_count > pps_sync_delay)
+                    {   // Force sync by reseting TIM2
+                        TIM2->CNT = TIM2->ARR;
+                        pps_sync_count++;
+                    }
+                }
+                else
+                {   // Reset shift count if we are below threshold
+                    pps_shift_count = 0;
+                }
+
+                // Frequency detection vor VCO adjustment
                 frequency = capture - previous_capture + /*(TIM1->ARR + 1)*/ 65536 * timer_overflows;
 
                 int32_t current_error = frequency_get_error();
@@ -103,21 +120,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
                 }
                 else {
                     ppb_correction = 0;
-                }
-                // See if we need to resync MCU PPS Out
-                pps_error = (capture - pps_capture + /*(TIM1->ARR + 1)*/ 65536 * pps_overflows) - 70000000 /*HAL_RCC_GetHCLKFreq()*/;
-                if(pps_sync_on && (abs(pps_error) >= pps_sync_threshold))
-                {
-                    pps_shift_count++;
-                    if(pps_shift_count > pps_sync_delay)
-                    {   // Force sync by reseting TIM2
-                        TIM2->CNT = TIM2->ARR;
-                        pps_sync_count++;
-                    }
-                }
-                else
-                {   // Reset shift count if we are below threshold
-                    pps_shift_count = 0;
                 }
                 // Save values for ppb and pps display
                 ppb_frequency = frequency;
