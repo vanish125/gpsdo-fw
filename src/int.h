@@ -21,5 +21,7 @@ extern volatile int32_t  ppb_millis;
 extern volatile int32_t  pps_error;
 extern volatile int32_t  pps_millis;
 extern volatile uint32_t pps_sync_count;
+extern volatile uint8_t  current_state_icon;
+extern volatile bool     refresh_screen;
 
 #endif

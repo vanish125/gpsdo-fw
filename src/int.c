@@ -34,7 +34,8 @@ volatile int32_t  pps_millis       = 0;
 volatile uint32_t pps_shift_count  = 0;
 volatile uint32_t pps_sync_count   = 0;
 // Icon to shwow at the top right corner of the screen
-volatile uint8_t  current_state_icon    = ' ';
+volatile uint8_t  current_state_icon = ' ';
+volatile bool     refresh_screen   = false;
 
 const char spinner[]   = "\2\3\4";
 uint8_t    pps_spinner = 0;
@@ -61,6 +62,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         {
             current_state_icon = blink_toggle ? 5 : ' ';
             blink_toggle = !blink_toggle;
+            refresh_screen = true;
         }
     }
 }
@@ -137,5 +139,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
         // Update state icon
         current_state_icon = spinner[pps_spinner];
         pps_spinner   = (pps_spinner + 1) % strlen(spinner);
+        refresh_screen = true;
     }
 }

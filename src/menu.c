@@ -11,11 +11,10 @@
 #include "gps.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "int.h"
-#include "menu.h"
 
 /// All times in ms
 #define DEBOUNCE_TIME        50
-#define SCREEN_REFRESH_TIME  500
+#define SCREEN_REFRESH_TIME  1000
 #define VCO_ADJUSTMENT_DELAY 3000
 
 // Firmware version tag
@@ -67,7 +66,7 @@ static uint32_t    last_screen_refresh = 0;
 static uint8_t     menu_level          = 0;
 static uint32_t    last_encoder_value  = 0;             
 
-static void menu_force_redraw() { last_screen_refresh = 0; }
+static void menu_force_redraw() { refresh_screen = true; }
 
 static void menu_draw()
 {
@@ -476,7 +475,7 @@ void menu_run()
         menu_force_redraw();
     }
 
-    if (now - last_screen_refresh > SCREEN_REFRESH_TIME) {
+    if (refresh_screen || (now - last_screen_refresh > SCREEN_REFRESH_TIME)) {
 
         // Move this to some other place, the menu system
         // shouldn't be in charge of this
@@ -486,6 +485,7 @@ void menu_run()
         }
 
         last_screen_refresh = now;
+        refresh_screen = false;
 
         // Display state icon
         LCD_PutCustom(0,0,current_state_icon);
