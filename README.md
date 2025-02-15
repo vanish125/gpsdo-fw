@@ -25,6 +25,8 @@ Here is the menu tree :
   - `Error`: the last measured frequency error (in Hz)
   - `Correction`: the last correction applied to PWM value
   - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
+  - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPM mean value reaches 0)
+  - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPM mean value reaches 0)
 - `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
 - `GPS Screen`: displays the number of detected satellites and the current GPS time
   - `Time`: the current GPS time
@@ -37,13 +39,14 @@ Here is the menu tree :
 - `Uptime Screen` : displays the number of seconds elapsed since last boot
 - `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
 - `Contrast Screen` : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
-- `PPS Screen`: This menu is dedicated to the [MCU controlled PPS output](https://github.com/fredzo/gpsdo-fw?tab=readme-ov-file#mcu-controlled-pps-output) ; it shows the shift with GPS PPS output in milliseconds (top left) and clock cycles (bottom)
+- `PPS Screen`: This menu is dedicated to the [MCU controlled PPS output](https://github.com/fredzo/gpsdo-fw?tab=readme-ov-file#mcu-controlled-pps-output) ; it shows the number of times the MCU PPS Output has been synced (top left) and the shift with GPS PPS output in clock cycles (bottom)
   - `Shift`: the shift between MCU PPS output and GPS PPS output in clock cycles
   - `Shift milliseconds`: the shift between MCU PPS output and GPS PPS output in milliseconds
   - `Sync Count`: the number of times the MCU PPS output has been re-synced to the GPS PPS output
   - `Sync.`: press to set the synchronization activation status (when set to `ON` the MCU PPS Output will be resynced if it deviates from the GPS PPS output of more than `threshold` clock cycles during more than `delay` seconds)
   - `Delay`: press to set the MCU PPS output synchronisation delay (in seconds)
   - `Threshold`: press to set the MCU PPS output synchronisation threshold (in clock cycles)
+  - `Force Sync`: press to force the MCU Controlles PPS output to be synched with the GPS PPS output
 - `Version Screen` : shows the current firmware version
 
 #### Main screen
