@@ -46,12 +46,12 @@ Here is the menu tree :
   - `Sync.`: press to set the synchronization activation status (when set to `ON` the MCU PPS Output will be resynced if it deviates from the GPS PPS output of more than `threshold` clock cycles during more than `delay` seconds)
   - `Delay`: press to set the MCU PPS output synchronisation delay (in seconds)
   - `Threshold`: press to set the MCU PPS output synchronisation threshold (in clock cycles)
-  - `Force Sync`: press to force the MCU Controlles PPS output to be synched with the GPS PPS output
+  - `Force Sync`: press to force the MCU Controlled PPS output to be synched with the GPS PPS output
 - `Version Screen` : shows the current firmware version
 
 #### Main screen
 ![Main Screen](https://github.com/fredzo/gpsdo-fw/blob/main/doc/main-screen.jpg?raw=true)
-The top left corner of the `Main Scren` contains an indicator for PPS pulses. Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error. The PPB error will show ">=10" if the error is larger than 9.99, this is only due to a lack of space on the display.
+The top left corner of the `Main Scren` contains an indicator for PPS pulses. Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error.
 Bottom line is the current UTC time from GPS module.
 
 #### PPB Menu
@@ -86,6 +86,8 @@ This output, compared to the PPS output of the original design, is available aft
 
 If `Sync` mode is on, the MCU controlled PPS output will be synchronized to the GPS PPS output as soon as the GPS module gets a fix. The deviation between the two PPS outputs will then be monitored and the MCU controlled PPS output will be resynced to the GPS PPS output as soon as it deviates from more than `threshold` clock cycles during more than `delay` seconds.
 
+If the `PPS auto resync` is set to `ON` in the `PPB` menu, the MCU controlled PPS Output will also be automatically resynced to the GPS PPS Output the first time PPM mean value reaches 0.
+
 The dedicated `PPS` menu allows monitoring the deviation between the MCU controlled PPS output and the GPS PPS output and setting the synchronization parameters:
   - The `Shift` entry shows the shift between MCU PPS output and GPS PPS output in clock cycles
   - The `Shift milliseconds` entry shows the shift between MCU PPS output and GPS PPS output in milliseconds
@@ -93,6 +95,7 @@ The dedicated `PPS` menu allows monitoring the deviation between the MCU control
   - The `Sync.` entry sets the synchronization activation status (when set to `ON` the MCU PPS Output will be resynced if it deviates from the GPS PPS output of more than `threshold` clock cycles during more than `delay` seconds)
   - The `Delay` entry sets the MCU PPS output synchronisation delay (in seconds)
   - The `Threshold` entry sets the MCU PPS output synchronisation threshold (in clock cycles)
+  - The `Force Sync` entry can be used to force the MCU Controlled PPS output to be synched with the GPS PPS output
 
 ![PPS Out](https://github.com/fredzo/gpsdo-fw/blob/main/doc/pps-output.jpg?raw=true)
 
