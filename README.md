@@ -128,7 +128,7 @@ Clone the repo, update submodules and do the cmake. (Or just download a release)
 Developing / building on Windows can be achieved with Visual Studio Code and MSYS2:
 * [Download and install VSCode](https://code.visualstudio.com/download)
 * [Download and install MSYS2](https://www.msys2.org/)
-* In a MSYS2 shell, run `pacman -S mingw-w64-x86_64-arm-none-eabi-gcc` to install arm-none-eabi-gcc toolchain
+* In a MSYS2 shell, run `pacman -S mingw-w64-x86_64-arm-none-eabi-gcc` to install arm-none-eabi-gcc toolchain and `pacman -S mingw-w64-x86_64-ninja` to install Ninja build system
 * Add `C:\msys64\mingw64\bin` to your Windows PATH
 * Clone the repo, update submodules, and open the project in VSCode
 * Install CMake VSCode extension
