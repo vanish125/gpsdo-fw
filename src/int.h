@@ -23,5 +23,8 @@ extern volatile int32_t  pps_millis;
 extern volatile uint32_t pps_sync_count;
 extern volatile uint8_t  current_state_icon;
 extern volatile bool     refresh_screen;
+extern volatile bool     sync_pps_out;
+extern volatile bool     pps_ppm_auto_sync;
+extern volatile bool     pwm_auto_save;
 
 #endif

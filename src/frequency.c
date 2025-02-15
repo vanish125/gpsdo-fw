@@ -64,3 +64,8 @@ int32_t frequency_get_ppb()
     // This will be a running average over 128 seconds of the error in PPB*100
     return (int64_t)circbuf_sum(&circular_buffer) * 1000000000 * 100 / ((int64_t)HAL_RCC_GetHCLKFreq() * num_samples);
 }
+
+bool frequency_is_stable()
+{
+    return ((num_samples == CIRCULAR_BUFFER_LEN) && (frequency_get_ppb() == 0));
+}

@@ -14,6 +14,7 @@
 
 /// All times in ms
 #define PPS_PULSE_WIDTH 100
+#define VCO_ADJUSTMENT_DELAY 3000
 
 void warmup()
 {
@@ -65,6 +66,8 @@ void gpsdo(void)
         ee_storage.pps_sync_threshold = 30000;
     }
     pps_sync_threshold = ee_storage.pps_sync_threshold;
+    pps_ppm_auto_sync = ee_storage.pps_ppm_auto_sync;
+    pwm_auto_save = ee_storage.pwm_auto_save;
 
     LCD_Init();
 
@@ -92,6 +95,10 @@ void gpsdo(void)
         {
             HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 0);
             pps_out_up = false;
+        }
+        if (now >= VCO_ADJUSTMENT_DELAY) {
+            // Start adjusting the VCO after some time
+            frequency_allow_adjustment(true);
         }
 
         gps_read();

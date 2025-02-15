@@ -11,6 +11,8 @@ typedef struct
     bool     pps_sync_on;
     uint32_t pps_sync_delay;
     uint32_t pps_sync_threshold;
+    bool     pps_ppm_auto_sync;
+    bool     pwm_auto_save;
 } ee_storage_t;
 
 extern ee_storage_t ee_storage;

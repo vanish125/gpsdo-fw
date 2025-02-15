@@ -36,6 +36,9 @@ volatile uint32_t pps_sync_count   = 0;
 // Icon to shwow at the top right corner of the screen
 volatile uint8_t  current_state_icon = ' ';
 volatile bool     refresh_screen   = false;
+volatile bool     sync_pps_out     = false;
+volatile bool     pps_ppm_auto_sync= false;
+volatile bool     pwm_auto_save    = false;
 
 const char spinner[]   = "\2\3\4";
 uint8_t    pps_spinner = 0;
@@ -46,6 +49,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         timer_overflows++;
         pps_overflows++;
     } else if (htim == &htim2) {
+        // TIM2 is configure for 1 second count
         // PPS output signal
         HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 1);
         pps_capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
@@ -59,7 +63,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
         device_uptime++;
 
         if(HAL_GetTick() - last_pps > 1500)
-        {
+        {   // No GPS PPS output, blink 'x' icon
             current_state_icon = blink_toggle ? 5 : ' ';
             blink_toggle = !blink_toggle;
             refresh_screen = true;
@@ -80,13 +84,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
             if (!first && current_tick - last_pps < 1300) {
                 // See if we need to resync MCU PPS Out
                 pps_error = (capture - pps_capture + /*(TIM1->ARR + 1)*/ 65536 * pps_overflows) - 70000000 /*HAL_RCC_GetHCLKFreq()*/;
-                if(pps_sync_on && (abs(pps_error) >= pps_sync_threshold))
+                if(pps_sync_on && (sync_pps_out ||(abs(pps_error) >= pps_sync_threshold)))
                 {
                     pps_shift_count++;
-                    if(pps_shift_count > pps_sync_delay)
+                    if(sync_pps_out || (pps_shift_count > pps_sync_delay))
                     {   // Force sync by reseting TIM2
                         TIM2->CNT = TIM2->ARR;
                         pps_sync_count++;
+                        pps_shift_count = 0;
+                        sync_pps_out = false;
                     }
                 }
                 else
