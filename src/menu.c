@@ -16,7 +16,7 @@
 #define DEBOUNCE_TIME        50
 
 // Firmware version tag
-#define FIRMWARE_VERSION    "v0.1.3"
+#define FIRMWARE_VERSION    "v0.1.4"
 
 volatile uint32_t rotary_down_time      = 0;
 volatile uint32_t rotary_up_time        = 0;
@@ -367,6 +367,7 @@ void menu_run()
                     contrast += encoder_increment;
                     if(contrast < 0) contrast = 0;
                     if(contrast > 100) contrast = 100;
+                    update_contrast();
                     LCD_Clear();
                     menu_force_redraw();
                     break;

@@ -54,9 +54,10 @@ void gpsdo(void)
     }
     TIM1->CCR2 = ee_storage.pwm;
     if (ee_storage.contrast == 0xff) {
-        ee_storage.contrast = 75;
+        ee_storage.contrast = 80;
     }
     contrast = ee_storage.contrast;
+    update_contrast();
     pps_sync_on = ee_storage.pps_sync_on;
     if (ee_storage.pps_sync_delay == 0xffffffff) {
         ee_storage.pps_sync_delay = 10;
@@ -87,8 +88,6 @@ void gpsdo(void)
     HAL_TIM_Base_Start(&htim3);
     HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
 
-    int contrast_pwm = 0;
-    GPIO_PinState contrast_pin_state;
     while (1) {
         uint32_t now = HAL_GetTick();
         if(pps_out_up && now-last_pps_out >= PPS_PULSE_WIDTH)
@@ -103,13 +102,5 @@ void gpsdo(void)
 
         gps_read();
         menu_run();
-
-        contrast_pin_state = (contrast_pwm < (contrast)) ? GPIO_PIN_RESET : GPIO_PIN_SET;
-        HAL_GPIO_WritePin(LCD_CONTRAST_GPIO_Port, LCD_CONTRAST_Pin, contrast_pin_state);
-        contrast_pwm++;
-        if(contrast_pwm>=100)
-        {
-            contrast_pwm = 0;
-        }
     }
 }

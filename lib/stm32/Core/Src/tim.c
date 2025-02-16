@@ -94,6 +94,17 @@ void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
@@ -283,8 +294,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**TIM1 GPIO Configuration
     PA9     ------> TIM1_CH2
+    PA10    ------> TIM1_CH3
     */
-    GPIO_InitStruct.Pin = VCO_CONTROL_Pin;
+    GPIO_InitStruct.Pin = VCO_CONTROL_Pin|LCD_CONTRAST_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(VCO_CONTROL_GPIO_Port, &GPIO_InitStruct);
@@ -310,8 +322,9 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
     /**TIM1 GPIO Configuration
     PA8     ------> TIM1_CH1
     PA9     ------> TIM1_CH2
+    PA10    ------> TIM1_CH3
     */
-    HAL_GPIO_DeInit(GPIOA, PPS_Pin|VCO_CONTROL_Pin);
+    HAL_GPIO_DeInit(GPIOA, PPS_Pin|VCO_CONTROL_Pin|LCD_CONTRAST_Pin);
 
     /* TIM1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(TIM1_UP_IRQn);

@@ -150,3 +150,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
         refresh_screen = true;
     }
 }
+
+void update_contrast()
+{
+    uint32_t pwm_value = 0xFFFF - (contrast * 0xFFFF / 100);
+    TIM1->CCR3 = pwm_value;
+}
