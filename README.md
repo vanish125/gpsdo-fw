@@ -14,7 +14,7 @@ The [original manual](https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766e
 
 ### Menu system
 
-This alternative firmware has a 2 level menu system. Moving from one menu item to another is done by turning the rotary encoder, and entering a givem menu (when applicable) is done by pressing the encoder.
+This alternative firmware has a 2 level menu system. Moving from one menu item to another is done by turning the rotary encoder, and entering a given menu (when applicable) is done by pressing the encoder.
 
 Here is the menu tree :
 - `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
