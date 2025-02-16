@@ -138,7 +138,7 @@ Developing / building on Windows can be achieved with Visual Studio Code and MSY
 * Add `C:\msys64\mingw64\bin` to your Windows PATH
 * Clone the repo, update submodules, and open the project in VSCode
 * Install CMake VSCode extension
-* Use CMake pane in VSCode to build the project
+* Use CMake pane in VSCode to build the project or use `ninja` in a command line
 * Run `arm-none-eabi-objcopy -O binary build/Release/gpsdo.elf build/Release/gpsdo.bin` in VSCode terminal to convert elf file in bin file
 
 ### USB
