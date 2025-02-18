@@ -37,12 +37,6 @@ void warmup()
     }
 }
 
-uint8_t lcd_backslash[][8] = { { 0b00000, 0b10000, 0b01000, 0b00100, 0b00010, 0b00001, 0b00000, 0b00000 },
-                               { 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b10000, 0b00000, 0b00000 },
-                               { 0b00000, 0b00000, 0b00000, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
-                               { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
-                               { 0b00000, 0b10001, 0b01010, 0b00100, 0b01010, 0b10001, 0b00000, 0b00000 } };
-
 void gpsdo(void)
 {
     HAL_TIM_Base_Start_IT(&htim2);
@@ -72,9 +66,7 @@ void gpsdo(void)
 
     LCD_Init();
 
-    for (int i = 0; i < 5; i++) {
-        LCD_CreateChar(i + 1, lcd_backslash[i]);
-    }
+    lcd_create_chars();
 
     gps_start_it();
 

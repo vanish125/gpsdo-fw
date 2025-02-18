@@ -11,6 +11,7 @@
 #include "gps.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "int.h"
+#include "menu.h"
 
 /// All times in ms
 #define DEBOUNCE_TIME        50
@@ -51,7 +52,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
+uint8_t lcd_backslash[][8] = { { 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b10000, 0b00000, 0b00000 },
+                               { 0b00000, 0b00000, 0b00000, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
+                               { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 } };
+
+void lcd_create_chars()
+{
+    for (int i = 0; i < 3; i++) {
+        LCD_CreateChar(i+1, lcd_backslash[i]);
+    }
+}
+
+typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_MAX } menu_pps_screen;
@@ -65,7 +77,53 @@ static uint32_t    last_encoder_value  = 0;
 static bool        auto_save_pwm_done  = false;
 static bool        auto_sync_pps_done  = false;
 
+static uint8_t     trend_pos = 0;
+
 static void menu_force_redraw() { refresh_screen = true; }
+
+static void menu_draw_trend()
+{
+    uint8_t values[40];
+    for(int i = 0 ; i < 40 ; i++)
+    {
+        //values[i] = (uint8_t)((((sin((6.28318530718*i/*+(trend_pos*6.28318530718/39)*/))/39)+1)*7)/2);
+        values[i] = (uint8_t)(((sin((6.28318530718*(i+trend_pos)/39))+1)*8)/2);
+        //values[i] = i%8;
+    }
+    for(int col_screen = 0 ; col_screen < 8 ; col_screen++)
+    {
+        uint8_t cust_char[8] = {0};
+        for(int col_char = 0; col_char < 5 ; col_char++)
+        {
+            uint8_t cur_val = values[col_screen * 5 + col_char];
+            cust_char[7-cur_val]  |= (0b10000 >> col_char);
+        }
+        LCD_CreateChar(col_screen,cust_char);
+        LCD_PutCustom(col_screen,1,col_screen);
+    }
+    trend_pos++;
+    if(trend_pos > 39)
+    {
+        trend_pos = 0;
+    }
+}
+
+static void menu_format_ppb(char* ppb_string)
+{
+    int32_t ppb = abs(frequency_get_ppb());
+
+    if (ppb ==  0xFFFF) {
+        strcpy(ppb_string, "   ?");
+    } else if (ppb > 999999) {
+        strcpy(ppb_string, ">10k");
+    } else if (ppb > 9999) {
+        sprintf(ppb_string, "%4ld", (ppb / 100));
+    } else if (ppb > 999) {
+        sprintf(ppb_string, "%ld.%01ld", ppb / 100, ((ppb % 100)/10));
+    } else {
+        sprintf(ppb_string, "%ld.%02ld", ppb / 100, ppb % 100);
+    }
+}
 
 static void menu_draw()
 {
@@ -77,23 +135,17 @@ static void menu_draw()
     default:
     case SCREEN_MAIN:
         // Main screen with satellites, ppb and UTC time
-        ppb = abs(frequency_get_ppb());
-
-        if (ppb ==  0xFFFF) {
-            strcpy(ppb_string, "   ?");
-        } else if (ppb > 999999) {
-            strcpy(ppb_string, ">10k");
-        } else if (ppb > 9999) {
-            sprintf(ppb_string, "%4ld", (ppb / 100));
-        } else if (ppb > 999) {
-            sprintf(ppb_string, "%ld.%01ld", ppb / 100, ((ppb % 100)/10));
-        } else {
-            sprintf(ppb_string, "%ld.%02ld", ppb / 100, ppb % 100);
-        }
-
+        menu_format_ppb(ppb_string);
         sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
         LCD_Puts(1, 0, screen_buffer);
         LCD_Puts(0, 1, gps_time);
+        break;
+    case SCREEN_TREND:
+        // Trend screen 
+        menu_format_ppb(ppb_string);
+        sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
+        LCD_Puts(1, 0, screen_buffer);
+        menu_draw_trend();
         break;
     case SCREEN_PPB:
         // Screen with ppb
@@ -317,6 +369,7 @@ void menu_run()
     uint32_t new_encoder_value = TIM3->CNT / 2;
     if(new_encoder_value != last_encoder_value)
     {
+        menu_screen previous_menu_screen = current_menu_screen;
         int encoder_increment = (new_encoder_value < last_encoder_value)? -1 : +1;
         // Handle overflow cases
         if(new_encoder_value == 32767 && last_encoder_value == 0)
@@ -436,6 +489,10 @@ void menu_run()
                 default:
                     break;
             }
+        }
+        if(previous_menu_screen == SCREEN_TREND)
+        {   // After trend screen, restore custom icon chars
+            lcd_create_chars();
         }
         last_encoder_value = new_encoder_value;
     }
@@ -567,6 +624,22 @@ void menu_run()
         refresh_screen = false;
 
         // Display state icon
+        if(current_menu_screen == SCREEN_TREND && (current_state_icon < 8))
+        {   // Don't use custom icon in trend screen since all 8 custom chars are used for graphic display
+            switch (current_state_icon)
+            {
+                default:
+                case 0:
+                    current_state_icon = SAT_ICON_1_CODE;
+                    break;
+                case 1:
+                    current_state_icon = SAT_ICON_2_CODE;
+                    break;
+                case 2:
+                    current_state_icon = SAT_ICON_3_CODE;
+                    break;
+            }
+        }
         LCD_PutCustom(0,0,current_state_icon);
 
         if (menu_level > 0 && current_menu_screen == SCREEN_PWM) {

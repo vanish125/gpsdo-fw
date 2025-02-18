@@ -40,7 +40,7 @@ volatile bool     sync_pps_out     = false;
 volatile bool     pps_ppm_auto_sync= false;
 volatile bool     pwm_auto_save    = false;
 
-const char spinner[]   = "\2\3\4";
+const char spinner[]   = "\1\2\3";
 uint8_t    pps_spinner = 0;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
@@ -64,7 +64,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 
         if(HAL_GetTick() - last_pps > 1500)
         {   // No GPS PPS output, blink 'x' icon
-            current_state_icon = blink_toggle ? 5 : ' ';
+            current_state_icon = blink_toggle ? NO_SAT_ICON_CODE : ' ';
             blink_toggle = !blink_toggle;
             refresh_screen = true;
         }
