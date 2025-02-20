@@ -737,8 +737,12 @@ void menu_run()
                             menu_level = 2;
                             break;
                         case SCREEN_TREND_V_SCALE:
+                            // Prevent editing v scale if auto-v is on
+                            menu_level = trend_auto_v ? 1 : 2;
+                            break;
                         case SCREEN_TREND_H_SCALE:
-                            menu_level = 0;
+                            // Prevent editing h scale if auto-h is on
+                            menu_level = trend_auto_h ? 1 : 2;
                             break;
                         default:
                             menu_level = 0;
