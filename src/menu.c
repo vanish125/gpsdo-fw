@@ -84,8 +84,10 @@ static bool         auto_sync_pps_done  = false;
 #define TREND_MAX_SIZE      2*3600
 #define TREND_SCREEN_SIZE   40
 #define TREND_UNSET_VALUE   0xFFFF
+#define TREND_MAX_H_SCALE   64
 static uint16_t     ppb_trend_values[TREND_MAX_SIZE];
 static uint32_t     ppb_trend_position = 0;
+static uint32_t     ppb_trend_size = 0;
 
 uint32_t    trend_v_scale = 0; 
 uint32_t    trend_h_scale = 0;
@@ -138,6 +140,10 @@ static void add_trend_value(uint32_t value)
     if(ppb_trend_position>=TREND_MAX_SIZE)
     {
         ppb_trend_position = 0;
+    }
+    else
+    {
+        ppb_trend_size++;
     }
 }
 
@@ -584,7 +590,7 @@ void menu_run()
                 case SCREEN_TREND_MAIN:
                     {
                     // Update position
-                    int32_t new_trend_shift = trend_shift + encoder_increment;
+                    int32_t new_trend_shift = trend_shift + (encoder_increment * trend_h_scale);
                     trend_arrow = encoder_increment < 0 ? TREND_LEFT_CODE : TREND_RIGHT_CODE;
                     if(new_trend_shift < 0)
                     {
@@ -641,7 +647,11 @@ void menu_run()
                 case SCREEN_TREND_H_SCALE:
                     // Update v scale
                     // TODO => filter values like in auto-scale
-                    trend_h_scale += encoder_increment;
+                    trend_h_scale = encoder_increment > 0 ? trend_h_scale * 2 : trend_h_scale/2;
+                    if(trend_h_scale > TREND_MAX_H_SCALE)
+                    {
+                        trend_h_scale = TREND_MAX_H_SCALE;
+                    }
                     LCD_Clear();
                     menu_force_redraw();
                     break;
