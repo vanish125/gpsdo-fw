@@ -571,11 +571,25 @@ void menu_run()
             switch(current_menu_trend_screen)
             {
                 case SCREEN_TREND_MAIN:
+                    {
                     // Update position
-                    trend_shift += encoder_increment;
+                    int32_t new_trend_shift = trend_shift + encoder_increment;
+                    if(new_trend_shift < 0)
+                    {
+                        trend_shift = 0;
+                    }
+                    else if(trend_shift >= (TREND_MAX_SIZE-TREND_SCREEN_SIZE))
+                    {
+                        trend_shift = TREND_MAX_SIZE-TREND_SCREEN_SIZE-1;
+                    }
+                    else
+                    {
+                        trend_shift = new_trend_shift;
+                    }
                     LCD_Clear();
                     menu_force_redraw();
                     break;
+                    }
                 case SCREEN_TREND_AUTO_V:
                     // Update mode
                     trend_auto_v = !trend_auto_v;
@@ -680,7 +694,6 @@ void menu_run()
         }
         last_encoder_value = new_encoder_value;
     }
-
 
     if (rotary_get_click()) {
         if (menu_level == 0) {
