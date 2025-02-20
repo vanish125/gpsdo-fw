@@ -39,6 +39,7 @@ volatile bool     refresh_screen   = false;
 volatile bool     sync_pps_out     = false;
 volatile bool     pps_ppm_auto_sync= false;
 volatile bool     pwm_auto_save    = false;
+volatile bool     update_trend     = false;
 
 const char spinner[]   = "\1\2\3";
 uint8_t    pps_spinner = 0;
@@ -148,6 +149,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
         current_state_icon = spinner[pps_spinner];
         pps_spinner   = (pps_spinner + 1) % strlen(spinner);
         refresh_screen = true;
+        update_trend = true;
     }
 }
 

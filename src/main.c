@@ -67,6 +67,7 @@ void gpsdo(void)
     LCD_Init();
 
     lcd_create_chars();
+    init_trend_values();
 
     gps_start_it();
 

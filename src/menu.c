@@ -54,11 +54,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 uint8_t lcd_backslash[][8] = { { 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b10000, 0b00000, 0b00000 },
                                { 0b00000, 0b00000, 0b00000, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
-                               { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 } };
+                               { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
+                               { 0b00000, 0b11101, 0b00010, 0b11001, 0b01101, 0b10101, 0b00000, 0b00000 },
+                             };
 
 void lcd_create_chars()
 {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         LCD_CreateChar(i+1, lcd_backslash[i]);
     }
 }
@@ -77,34 +79,91 @@ static uint32_t    last_encoder_value  = 0;
 static bool        auto_save_pwm_done  = false;
 static bool        auto_sync_pps_done  = false;
 
-static uint8_t     trend_pos = 0;
+#define TREND_MAX_SIZE      3600
+#define TREND_SCREEN_SIZE   40
+#define TREND_UNSET_VALUE   0xFFFF
+static uint32_t    ppb_trend_values[TREND_MAX_SIZE];
+static uint32_t    ppb_trend_position = 0;
 
 static void menu_force_redraw() { refresh_screen = true; }
 
+void init_trend_values()
+{
+    for(int i = 0 ; i < TREND_MAX_SIZE ; i++)
+    {
+        ppb_trend_values[i] = TREND_UNSET_VALUE;
+    }
+}
+
+static uint32_t get_trend_value(uint32_t position)
+{
+    int32_t read_index = (ppb_trend_position - TREND_SCREEN_SIZE + position);
+    if(read_index<0)
+    {   // Wrap around
+        read_index = TREND_MAX_SIZE + read_index;
+    }
+    return ppb_trend_values[read_index];
+}
+
+static uint32_t get_trend__peak_value()
+{
+    uint32_t peak_value = 0;
+    uint32_t cur_value;
+    for(int32_t pos = 0; pos < TREND_SCREEN_SIZE ; pos++)
+    {
+        cur_value = get_trend_value(pos);
+        if((cur_value != TREND_UNSET_VALUE) && (cur_value > peak_value))
+        {
+            peak_value = cur_value;
+        }
+    }
+    return peak_value;
+}
+
+static void add_trend_value(uint32_t value)
+{
+    ppb_trend_values[ppb_trend_position]=value;
+    ppb_trend_position++;
+    if(ppb_trend_position>=TREND_MAX_SIZE)
+    {
+        ppb_trend_position = 0;
+    }
+}
+
 static void menu_draw_trend()
 {
-    uint8_t values[40];
-    for(int i = 0 ; i < 40 ; i++)
-    {
-        //values[i] = (uint8_t)((((sin((6.28318530718*i/*+(trend_pos*6.28318530718/39)*/))/39)+1)*7)/2);
-        values[i] = (uint8_t)(((sin((6.28318530718*(i+trend_pos)/39))+1)*8)/2);
-        //values[i] = i%8;
-    }
     for(int col_screen = 0 ; col_screen < 8 ; col_screen++)
     {
         uint8_t cust_char[8] = {0};
         for(int col_char = 0; col_char < 5 ; col_char++)
         {
-            uint8_t cur_val = values[col_screen * 5 + col_char];
-            cust_char[7-cur_val]  |= (0b10000 >> col_char);
+            uint32_t cur_ppb = get_trend_value(col_screen * 5 + col_char);
+            // Ignore unset values
+            if(cur_ppb != TREND_UNSET_VALUE)
+            {   // Determine scale, to fit the screen
+                uint32_t scale = get_trend__peak_value();
+                if(scale < 70)
+                {   // 70 is the lower possible scale (0.1 ppb = 1px)
+                    scale = 70;
+                }
+                else if(scale > 1000)
+                {   // For large values round scale to 10 ppb
+                    scale = round(((double)scale)/1000)*1000;
+                }
+                else if(scale > 100)
+                {   // For medium values round scale to 1 ppb
+                    scale = round(((double)scale)/100)*100;
+                }
+                else
+                {   // For smaller values, round scale to 0.1 ppb
+                    scale = round(((double)scale)/10)*10;
+                }
+                uint8_t cur_val = cur_ppb >= scale ? 7 : cur_ppb * 7 / scale;
+                cust_char[7-cur_val]  |= (0b10000 >> col_char);
+            }
         }
         LCD_CreateChar(col_screen,cust_char);
         LCD_PutCustom(col_screen,1,col_screen);
-    }
-    trend_pos++;
-    if(trend_pos > 39)
-    {
-        trend_pos = 0;
     }
 }
 
@@ -626,21 +685,36 @@ void menu_run()
         // Display state icon
         if(current_menu_screen == SCREEN_TREND && (current_state_icon < 8))
         {   // Don't use custom icon in trend screen since all 8 custom chars are used for graphic display
+            uint8_t icon;
             switch (current_state_icon)
             {
                 default:
-                case 0:
-                    current_state_icon = SAT_ICON_1_CODE;
-                    break;
                 case 1:
-                    current_state_icon = SAT_ICON_2_CODE;
+                    icon = SAT_ICON_1_CODE;
                     break;
                 case 2:
-                    current_state_icon = SAT_ICON_3_CODE;
+                    icon = SAT_ICON_2_CODE;
+                    break;
+                case 3:
+                    icon = SAT_ICON_3_CODE;
+                    break;
+                case 4:
+                    icon = NO_SAT_STD_ICON_CODE;
                     break;
             }
+            LCD_PutCustom(0,0,icon);
         }
-        LCD_PutCustom(0,0,current_state_icon);
+        else
+        {
+            LCD_PutCustom(0,0,current_state_icon);
+        }
+        
+        // Update PPB trend if needed
+        if(update_trend)
+        {
+            add_trend_value(abs(frequency_get_ppb()));
+            update_trend = false;
+        }
 
         if (menu_level > 0 && current_menu_screen == SCREEN_PWM) {
             LCD_Puts(0, 0, " PRESS ");

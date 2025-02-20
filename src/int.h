@@ -26,6 +26,7 @@ extern volatile bool     refresh_screen;
 extern volatile bool     sync_pps_out;
 extern volatile bool     pps_ppm_auto_sync;
 extern volatile bool     pwm_auto_save;
+extern volatile bool     update_trend;
 
 void update_contrast();
 
