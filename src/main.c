@@ -64,6 +64,17 @@ void gpsdo(void)
     pps_ppm_auto_sync = ee_storage.pps_ppm_auto_sync;
     pwm_auto_save = ee_storage.pwm_auto_save;
 
+    trend_auto_v = ee_storage.trend_auto_v;
+    trend_auto_h = ee_storage.trend_auto_h;
+    if (ee_storage.trend_v_scale == 0xffffffff) {
+        ee_storage.trend_v_scale = 70;
+    }
+    trend_v_scale = ee_storage.trend_v_scale;
+    if (ee_storage.trend_h_scale == 0xffffffff) {
+        ee_storage.trend_h_scale = 40;
+    }
+    trend_h_scale = ee_storage.trend_h_scale;
+
     LCD_Init();
 
     lcd_create_chars();

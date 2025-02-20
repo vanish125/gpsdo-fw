@@ -11,6 +11,12 @@
 #define NO_SAT_ICON_CODE        0x04
 #define NO_SAT_STD_ICON_CODE    '!'
 
+extern bool trend_auto_h;
+extern bool trend_auto_v;
+extern uint32_t trend_v_scale; 
+extern uint32_t trend_h_scale; 
+
+
 
 bool rotary_get_click();
 void menu_run();

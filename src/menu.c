@@ -66,24 +66,34 @@ void lcd_create_chars()
 }
 
 typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_H_SCALE, SCREEN_TREND_MAX } menu_trend_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_MAX } menu_pps_screen;
 
 static menu_screen current_menu_screen = SCREEN_MAIN;
+static menu_trend_screen current_menu_trend_screen = SCREEN_TREND_MAIN;
 static menu_gps_screen current_menu_gps_screen = SCREEN_GPS_TIME;
 static menu_ppb_screen current_menu_ppb_screen = SCREEN_PPB_MEAN;
 static menu_pps_screen current_menu_pps_screen = SCREEN_PPS_SHIFT;
-static uint8_t     menu_level          = 0;
-static uint32_t    last_encoder_value  = 0;
-static bool        auto_save_pwm_done  = false;
-static bool        auto_sync_pps_done  = false;
+static uint8_t      menu_level          = 0;
+static uint32_t     last_encoder_value  = 0;
+static bool         auto_save_pwm_done  = false;
+static bool         auto_sync_pps_done  = false;
 
-#define TREND_MAX_SIZE      3600
+#define TREND_MAX_SIZE      2*3600
 #define TREND_SCREEN_SIZE   40
 #define TREND_UNSET_VALUE   0xFFFF
-static uint32_t    ppb_trend_values[TREND_MAX_SIZE];
-static uint32_t    ppb_trend_position = 0;
+static uint16_t     ppb_trend_values[TREND_MAX_SIZE];
+static uint32_t     ppb_trend_position = 0;
+
+uint32_t    trend_v_scale = 0; 
+uint32_t    trend_h_scale = 0;
+uint32_t    trend_shift = 0; 
+
+bool    trend_auto_h = true;
+bool    trend_auto_v = true;
+
 
 static void menu_force_redraw() { refresh_screen = true; }
 
@@ -95,9 +105,9 @@ void init_trend_values()
     }
 }
 
-static uint32_t get_trend_value(uint32_t position)
+static uint32_t get_trend_value(uint32_t position, uint32_t shift)
 {
-    int32_t read_index = (ppb_trend_position - TREND_SCREEN_SIZE + position);
+    int32_t read_index = (ppb_trend_position - TREND_SCREEN_SIZE + position - shift);
     if(read_index<0)
     {   // Wrap around
         read_index = TREND_MAX_SIZE + read_index;
@@ -105,13 +115,13 @@ static uint32_t get_trend_value(uint32_t position)
     return ppb_trend_values[read_index];
 }
 
-static uint32_t get_trend__peak_value()
+static uint32_t get_trend_peak_value(uint32_t shift)
 {
     uint32_t peak_value = 0;
     uint32_t cur_value;
     for(int32_t pos = 0; pos < TREND_SCREEN_SIZE ; pos++)
     {
-        cur_value = get_trend_value(pos);
+        cur_value = get_trend_value(pos,shift);
         if((cur_value != TREND_UNSET_VALUE) && (cur_value > peak_value))
         {
             peak_value = cur_value;
@@ -130,35 +140,44 @@ static void add_trend_value(uint32_t value)
     }
 }
 
-static void menu_draw_trend()
+static uint32_t menu_roud_v_scale(uint32_t scale)
 {
+    uint32_t rounded_scale;
+    if(scale < 70)
+    {   // 70 is the lower possible scale (0.1 ppb = 1px)
+        rounded_scale = 70;
+    }
+    else if(scale > 1000)
+    {   // For large values round scale to 10 ppb
+        rounded_scale = round(((double)scale)/1000)*1000;
+    }
+    else if(scale > 100)
+    {   // For medium values round scale to 1 ppb
+        rounded_scale = round(((double)scale)/100)*100;
+    }
+    else
+    {   // For smaller values, round scale to 0.1 ppb
+        rounded_scale = round(((double)scale)/10)*10;
+    }
+    return rounded_scale;
+}
+
+static void menu_draw_trend(uint32_t shift)
+{
+    if(trend_auto_v)
+    {   // Determine scale, to fit the screen
+        trend_auto_v = menu_roud_v_scale(get_trend_peak_value(shift));
+    }
     for(int col_screen = 0 ; col_screen < 8 ; col_screen++)
     {
         uint8_t cust_char[8] = {0};
         for(int col_char = 0; col_char < 5 ; col_char++)
         {
-            uint32_t cur_ppb = get_trend_value(col_screen * 5 + col_char);
+            uint32_t cur_ppb = get_trend_value(col_screen * 5 + col_char,shift);
             // Ignore unset values
             if(cur_ppb != TREND_UNSET_VALUE)
-            {   // Determine scale, to fit the screen
-                uint32_t scale = get_trend__peak_value();
-                if(scale < 70)
-                {   // 70 is the lower possible scale (0.1 ppb = 1px)
-                    scale = 70;
-                }
-                else if(scale > 1000)
-                {   // For large values round scale to 10 ppb
-                    scale = round(((double)scale)/1000)*1000;
-                }
-                else if(scale > 100)
-                {   // For medium values round scale to 1 ppb
-                    scale = round(((double)scale)/100)*100;
-                }
-                else
-                {   // For smaller values, round scale to 0.1 ppb
-                    scale = round(((double)scale)/10)*10;
-                }
-                uint8_t cur_val = cur_ppb >= scale ? 7 : cur_ppb * 7 / scale;
+            {   
+                uint8_t cur_val = cur_ppb >= trend_v_scale ? 7 : cur_ppb * 7 / trend_v_scale;
                 cust_char[7-cur_val]  |= (0b10000 >> col_char);
             }
         }
@@ -201,10 +220,52 @@ static void menu_draw()
         break;
     case SCREEN_TREND:
         // Trend screen 
-        menu_format_ppb(ppb_string);
-        sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
-        LCD_Puts(1, 0, screen_buffer);
-        menu_draw_trend();
+        if(menu_level == 0)
+        {
+            menu_format_ppb(ppb_string);
+            sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
+            LCD_Puts(1, 0, screen_buffer);
+            menu_draw_trend(0);
+        }
+        else
+        {
+            switch (current_menu_trend_screen)
+            {
+                default:
+                case SCREEN_TREND_MAIN:
+                    menu_format_ppb(ppb_string);
+                    sprintf(screen_buffer, menu_level == 1 ? "%02d %s" : "%02d-%s", num_sats, ppb_string);
+                    LCD_Puts(1, 0, screen_buffer);
+                    menu_draw_trend(trend_shift);
+                    break;
+                case SCREEN_TREND_AUTO_V:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Auto-V:":"Auto-V?");
+                    LCD_Puts(0, 1, "        ");
+                    LCD_Puts(0, 1, trend_auto_v ? "      ON" : "     OFF");
+                    break;
+                case SCREEN_TREND_AUTO_H:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Auto-H:":"Auto-H?");
+                    LCD_Puts(0, 1, "        ");
+                    LCD_Puts(0, 1, trend_auto_h ? "      ON" : "     OFF");
+                    break;
+                case SCREEN_TREND_V_SCALE:
+                    LCD_Puts(1, 0, menu_level == 0 ? "V-Scal:":"V-Scal?");
+                    LCD_Puts(0, 1, "        ");
+                    sprintf(screen_buffer, "%ld.%02ld", trend_v_scale / 100, trend_v_scale % 100);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_TREND_H_SCALE:
+                    LCD_Puts(1, 0, menu_level == 0 ? "H-Scal:":"H-Scal?");
+                    LCD_Puts(0, 1, "        ");
+                    sprintf(screen_buffer, "%ld", trend_h_scale);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_TREND_EXIT:
+                    LCD_Puts(1, 0, "Exit?");
+                    LCD_Puts(0, 1, "        ");
+                    break;
+            }
+        }
         break;
     case SCREEN_PPB:
         // Screen with ppb
@@ -450,6 +511,15 @@ void menu_run()
         {   // Sub menu
             switch(current_menu_screen)
             {
+                case SCREEN_TREND:
+                    {
+                        // Trend view => change trend menu
+                        current_menu_trend_screen =  (current_menu_trend_screen + encoder_increment) % SCREEN_TREND_MAX;
+                        if(current_menu_trend_screen >= SCREEN_TREND_MAX) current_menu_trend_screen = SCREEN_TREND_MAX-1; // Roll over for first sceen - 1
+                        LCD_Clear();
+                        menu_force_redraw();
+                    }
+                    break;
                 case SCREEN_PWM:
                     // Go back to main menu
                     LCD_Clear();
@@ -496,6 +566,61 @@ void menu_run()
                     break;
             }
         }
+        else if(menu_level == 2 && current_menu_screen == SCREEN_TREND)
+        {   // Sub-sub menu for TREND screen
+            switch(current_menu_trend_screen)
+            {
+                case SCREEN_TREND_MAIN:
+                    // Update position
+                    trend_shift += encoder_increment;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                case SCREEN_TREND_AUTO_V:
+                    // Update mode
+                    trend_auto_v = !trend_auto_v;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                case SCREEN_TREND_AUTO_H:
+                    // Update mode
+                    trend_auto_h = !trend_auto_h;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                case SCREEN_TREND_V_SCALE:
+                    {
+                    // Update v scale
+                    uint32_t multiplier;
+                    if(trend_v_scale > 1000)
+                    {
+                        multiplier = 1000;
+                    }
+                    else if(trend_v_scale > 100)
+                    {
+                        multiplier = 100;
+                    }
+                    else
+                    {
+                        multiplier = 10;
+                    }
+                    trend_v_scale += (multiplier*encoder_increment);
+                    trend_v_scale = menu_roud_v_scale(trend_v_scale);
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                    }
+                case SCREEN_TREND_H_SCALE:
+                    // Update v scale
+                    // TODO => filter values like in auto-scale
+                    trend_h_scale += encoder_increment;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                default:
+                    break;
+            }
+        }
         else if(menu_level == 2 && current_menu_screen == SCREEN_PPB)
         {   // Sub-sub menu for PPB screen
             switch(current_menu_ppb_screen)
@@ -533,7 +658,7 @@ void menu_run()
                     menu_force_redraw();
                     break;
                 case SCREEN_PPS_SYNC_THRESHOLD:
-                    // Update delay
+                    // Update threshold
                     pps_sync_threshold += encoder_increment;
                     LCD_Clear();
                     menu_force_redraw();
@@ -561,6 +686,7 @@ void menu_run()
         if (menu_level == 0) {
             switch(current_menu_screen)
             {
+                case SCREEN_TREND:
                 case SCREEN_PPB:
                 case SCREEN_GPS:
                 case SCREEN_PWM:
@@ -575,6 +701,23 @@ void menu_run()
         } else  if (menu_level == 1){
             switch(current_menu_screen)
             {
+                case SCREEN_TREND:
+                    switch(current_menu_trend_screen)
+                    {
+                        case SCREEN_TREND_AUTO_H:
+                        case SCREEN_TREND_AUTO_V:
+                        case SCREEN_MAIN:
+                            menu_level = 2;
+                            break;
+                        case SCREEN_TREND_V_SCALE:
+                        case SCREEN_TREND_H_SCALE:
+                            menu_level = 0;
+                            break;
+                        default:
+                            menu_level = 0;
+                            break;
+                    }
+                    break;
                 case SCREEN_PWM:
                     ee_storage.pwm = TIM1->CCR2;
                     EE_Write();
@@ -618,6 +761,42 @@ void menu_run()
                     menu_level = 0;
                     break;
             }
+            LCD_Clear();
+        } else  if (menu_level == 2 && current_menu_screen == SCREEN_TREND){
+            switch(current_menu_trend_screen)
+            {
+                case SCREEN_TREND_AUTO_V:
+                    if(ee_storage.trend_auto_v != trend_auto_v)
+                    {   // Save changes
+                        ee_storage.trend_auto_v = trend_auto_v;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_TREND_AUTO_H:
+                    if(ee_storage.trend_auto_h != trend_auto_h)
+                    {   // Save changes
+                        ee_storage.trend_auto_h = trend_auto_h;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_TREND_V_SCALE:
+                    if(ee_storage.trend_v_scale != trend_v_scale)
+                    {   // Save changes
+                        ee_storage.trend_v_scale = trend_v_scale;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_TREND_H_SCALE:
+                    if(ee_storage.trend_h_scale != trend_h_scale)
+                    {   // Save changes
+                        ee_storage.trend_h_scale = trend_h_scale;
+                        EE_Write();
+                    }
+                    break;
+                default:
+                    break;
+            }
+            menu_level = 1;
             LCD_Clear();
         } else  if (menu_level == 2 && current_menu_screen == SCREEN_PPB){
             switch(current_menu_ppb_screen)
