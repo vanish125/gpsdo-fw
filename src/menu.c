@@ -90,6 +90,7 @@ static uint32_t     ppb_trend_position = 0;
 uint32_t    trend_v_scale = 0; 
 uint32_t    trend_h_scale = 0;
 uint32_t    trend_shift = 0; 
+uint8_t     trend_arrow = TREND_LEFT_CODE;
 
 bool    trend_auto_h = true;
 bool    trend_auto_v = true;
@@ -186,9 +187,9 @@ static void menu_draw_trend(uint32_t shift)
     }
 }
 
-static void menu_format_ppb(char* ppb_string)
+static void menu_format_ppb(char* ppb_string, int32_t ppb_value)
 {
-    int32_t ppb = abs(frequency_get_ppb());
+    int32_t ppb = abs(ppb_value);
 
     if (ppb ==  0xFFFF) {
         strcpy(ppb_string, "   ?");
@@ -213,7 +214,7 @@ static void menu_draw()
     default:
     case SCREEN_MAIN:
         // Main screen with satellites, ppb and UTC time
-        menu_format_ppb(ppb_string);
+        menu_format_ppb(ppb_string,frequency_get_ppb());
         sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
         LCD_Puts(1, 0, screen_buffer);
         LCD_Puts(0, 1, gps_time);
@@ -222,7 +223,7 @@ static void menu_draw()
         // Trend screen 
         if(menu_level == 0)
         {
-            menu_format_ppb(ppb_string);
+            menu_format_ppb(ppb_string,frequency_get_ppb());
             sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
             LCD_Puts(1, 0, screen_buffer);
             menu_draw_trend(0);
@@ -233,10 +234,20 @@ static void menu_draw()
             {
                 default:
                 case SCREEN_TREND_MAIN:
-                    menu_format_ppb(ppb_string);
-                    sprintf(screen_buffer, menu_level == 1 ? "%02d %s" : "%02d-%s", num_sats, ppb_string);
-                    LCD_Puts(1, 0, screen_buffer);
-                    menu_draw_trend(trend_shift);
+                    if(menu_level == 1)
+                    {
+                        menu_format_ppb(ppb_string,frequency_get_ppb());
+                        sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
+                        LCD_Puts(1, 0, screen_buffer);
+                        menu_draw_trend(0);
+                    }
+                    else
+                    {
+                        menu_format_ppb(ppb_string,get_trend_value(trend_shift,0));
+                        sprintf(screen_buffer, "%03ld%c%s", trend_shift,trend_arrow,ppb_string);
+                        LCD_Puts(0, 0, screen_buffer);
+                        menu_draw_trend(trend_shift);
+                    }
                     break;
                 case SCREEN_TREND_AUTO_V:
                     LCD_Puts(1, 0, menu_level == 1 ? "Auto-V:":"Auto-V?");
@@ -574,13 +585,16 @@ void menu_run()
                     {
                     // Update position
                     int32_t new_trend_shift = trend_shift + encoder_increment;
+                    trend_arrow = encoder_increment < 0 ? TREND_LEFT_CODE : TREND_RIGHT_CODE;
                     if(new_trend_shift < 0)
                     {
                         trend_shift = 0;
+                        encoder_increment = TREND_LEFT_CODE;
                     }
                     else if(trend_shift >= (TREND_MAX_SIZE-TREND_SCREEN_SIZE))
                     {
                         trend_shift = TREND_MAX_SIZE-TREND_SCREEN_SIZE-1;
+                        encoder_increment = TREND_RIGHT_CODE;
                     }
                     else
                     {
