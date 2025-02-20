@@ -109,7 +109,7 @@ void init_trend_values()
 }
 
 static uint32_t get_trend_value(uint32_t position, uint32_t shift, uint32_t h_scale)
-{   // TODO : implement average over trend_h_scale
+{
     if(h_scale == 1)
     {   // No h scaling
         int32_t read_index = (ppb_trend_position - TREND_SCREEN_SIZE + position - shift);
@@ -663,7 +663,6 @@ void menu_run()
                     }
                 case SCREEN_TREND_H_SCALE:
                     // Update v scale
-                    // TODO => filter values like in auto-scale
                     trend_h_scale = encoder_increment > 0 ? trend_h_scale * 2 : trend_h_scale/2;
                     if(trend_h_scale > TREND_MAX_H_SCALE)
                     {
