@@ -89,8 +89,8 @@ static uint16_t     ppb_trend_values[TREND_MAX_SIZE];
 static uint32_t     ppb_trend_position = 0;
 static uint32_t     ppb_trend_size = 0;
 
-uint32_t    trend_v_scale = 0; 
-uint32_t    trend_h_scale = 0;
+uint32_t    trend_v_scale = 70; 
+uint32_t    trend_h_scale = 1;
 uint32_t    trend_shift = 0; 
 uint8_t     trend_arrow = TREND_LEFT_CODE;
 
@@ -109,7 +109,7 @@ void init_trend_values()
 }
 
 static uint32_t get_trend_value(uint32_t position, uint32_t shift)
-{
+{   // TODO : implement average over trend_h_scale
     int32_t read_index = (ppb_trend_position - TREND_SCREEN_SIZE + position - shift);
     if(read_index<0)
     {   // Wrap around
@@ -170,10 +170,15 @@ static uint32_t menu_roud_v_scale(uint32_t scale)
 }
 
 static void menu_draw_trend(uint32_t shift)
-{
+{   // Vertical auto-scale
     if(trend_auto_v)
     {   // Determine scale, to fit the screen
         trend_auto_v = menu_roud_v_scale(get_trend_peak_value(shift));
+    }
+    // Horizontal autoscale
+    if(trend_auto_h && (ppb_trend_size >= trend_h_scale * TREND_SCREEN_SIZE))
+    {   // Need to zoom horizontally
+        trend_h_scale = ppb_trend_size/TREND_SCREEN_SIZE;
     }
     for(int col_screen = 0 ; col_screen < 8 ; col_screen++)
     {
@@ -651,6 +656,10 @@ void menu_run()
                     if(trend_h_scale > TREND_MAX_H_SCALE)
                     {
                         trend_h_scale = TREND_MAX_H_SCALE;
+                    }
+                    else if(trend_h_scale < 1)
+                    {
+                        trend_h_scale = 1;
                     }
                     LCD_Clear();
                     menu_force_redraw();

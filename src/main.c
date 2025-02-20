@@ -71,7 +71,7 @@ void gpsdo(void)
     }
     trend_v_scale = ee_storage.trend_v_scale;
     if (ee_storage.trend_h_scale == 0xffffffff) {
-        ee_storage.trend_h_scale = 40;
+        ee_storage.trend_h_scale = 1;
     }
     trend_h_scale = ee_storage.trend_h_scale;
 
