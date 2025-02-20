@@ -108,14 +108,26 @@ void init_trend_values()
     }
 }
 
-static uint32_t get_trend_value(uint32_t position, uint32_t shift)
+static uint32_t get_trend_value(uint32_t position, uint32_t shift, uint32_t h_scale)
 {   // TODO : implement average over trend_h_scale
-    int32_t read_index = (ppb_trend_position - TREND_SCREEN_SIZE + position - shift);
-    if(read_index<0)
-    {   // Wrap around
-        read_index = TREND_MAX_SIZE + read_index;
+    if(h_scale == 1)
+    {   // No h scaling
+        int32_t read_index = (ppb_trend_position - TREND_SCREEN_SIZE + position - shift);
+        if(read_index<0)
+        {   // Wrap around
+            read_index = TREND_MAX_SIZE + read_index;
+        }
+        return ppb_trend_values[read_index];
     }
-    return ppb_trend_values[read_index];
+    else
+    {   // Compute mean value over h-scale size
+        uint32_t result = 0;
+        for(uint32_t i = 0 ; i < h_scale ; i ++)
+        {
+            result += get_trend_value(position + i,shift,0);
+        }
+        return result/h_scale;
+    }
 }
 
 static uint32_t get_trend_peak_value(uint32_t shift)
@@ -124,7 +136,7 @@ static uint32_t get_trend_peak_value(uint32_t shift)
     uint32_t cur_value;
     for(int32_t pos = 0; pos < TREND_SCREEN_SIZE ; pos++)
     {
-        cur_value = get_trend_value(pos,shift);
+        cur_value = get_trend_value(pos,shift,trend_h_scale);
         if((cur_value != TREND_UNSET_VALUE) && (cur_value > peak_value))
         {
             peak_value = cur_value;
@@ -170,22 +182,22 @@ static uint32_t menu_roud_v_scale(uint32_t scale)
 }
 
 static void menu_draw_trend(uint32_t shift)
-{   // Vertical auto-scale
-    if(trend_auto_v)
-    {   // Determine scale, to fit the screen
-        trend_auto_v = menu_roud_v_scale(get_trend_peak_value(shift));
-    }
-    // Horizontal autoscale
+{   // Horizontal autoscale
     if(trend_auto_h && (ppb_trend_size >= trend_h_scale * TREND_SCREEN_SIZE))
     {   // Need to zoom horizontally
         trend_h_scale = ppb_trend_size/TREND_SCREEN_SIZE;
+    }
+    // Vertical auto-scale
+    if(trend_auto_v)
+    {   // Determine scale, to fit the screen
+        trend_auto_v = menu_roud_v_scale(get_trend_peak_value(shift));
     }
     for(int col_screen = 0 ; col_screen < 8 ; col_screen++)
     {
         uint8_t cust_char[8] = {0};
         for(int col_char = 0; col_char < 5 ; col_char++)
         {
-            uint32_t cur_ppb = get_trend_value(col_screen * 5 + col_char,shift);
+            uint32_t cur_ppb = get_trend_value(col_screen * 5 + col_char,shift,trend_h_scale);
             // Ignore unset values
             if(cur_ppb != TREND_UNSET_VALUE)
             {   
@@ -254,7 +266,7 @@ static void menu_draw()
                     }
                     else
                     {
-                        menu_format_ppb(ppb_string,get_trend_value(trend_shift,0));
+                        menu_format_ppb(ppb_string,get_trend_value(trend_shift,0,trend_h_scale));
                         sprintf(screen_buffer, "%03ld%c%s", trend_shift,trend_arrow,ppb_string);
                         LCD_Puts(0, 0, screen_buffer);
                         menu_draw_trend(trend_shift);
