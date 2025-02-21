@@ -186,6 +186,10 @@ static void menu_draw_trend(uint32_t shift)
     if(trend_auto_h && (ppb_trend_size >= trend_h_scale * TREND_SCREEN_SIZE))
     {   // Need to zoom horizontally
         trend_h_scale = ppb_trend_size/TREND_SCREEN_SIZE;
+        if(trend_h_scale > TREND_MAX_H_SCALE)
+        {
+            trend_h_scale = TREND_MAX_H_SCALE;
+        }
     }
     // Vertical auto-scale
     if(trend_auto_v)
