@@ -166,11 +166,11 @@ static uint32_t menu_roud_v_scale(uint32_t scale)
     {   // 70 is the lower possible scale (0.1 ppb = 1px)
         rounded_scale = 70;
     }
-    else if(scale > 1000)
+    else if(scale > 2000)
     {   // For large values round scale to 10 ppb
         rounded_scale = round(((double)scale)/1000)*1000;
     }
-    else if(scale > 100)
+    else if(scale > 200)
     {   // For medium values round scale to 1 ppb
         rounded_scale = round(((double)scale)/100)*100;
     }
@@ -647,11 +647,11 @@ void menu_run()
                     {
                     // Update v scale
                     uint32_t multiplier;
-                    if(trend_v_scale > 1000 || ((trend_v_scale == 1000) && (encoder_increment > 0)))
+                    if(trend_v_scale > 2000 || ((trend_v_scale == 2000) && (encoder_increment > 0)))
                     {
                         multiplier = 1000;
                     }
-                    else if(trend_v_scale > 100 || ((trend_v_scale == 100) && (encoder_increment > 0)))
+                    else if(trend_v_scale > 200 || ((trend_v_scale == 200) && (encoder_increment > 0)))
                     {
                         multiplier = 100;
                     }
