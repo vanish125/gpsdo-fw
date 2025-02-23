@@ -651,7 +651,7 @@ void menu_run()
                     {
                         multiplier = 1000;
                     }
-                    if(trend_v_scale > 100 || ((trend_v_scale == 100) && (encoder_increment > 0)))
+                    else if(trend_v_scale > 100 || ((trend_v_scale == 100) && (encoder_increment > 0)))
                     {
                         multiplier = 100;
                     }
