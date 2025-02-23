@@ -66,7 +66,7 @@ void lcd_create_chars()
 }
 
 typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
-typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_H_SCALE, SCREEN_TREND_MAX } menu_trend_screen;
+typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_MAX } menu_pps_screen;
@@ -194,7 +194,7 @@ static void menu_draw_trend(uint32_t shift)
     // Vertical auto-scale
     if(trend_auto_v)
     {   // Determine scale, to fit the screen
-        trend_auto_v = menu_roud_v_scale(get_trend_peak_value(shift));
+        trend_v_scale = menu_roud_v_scale(get_trend_peak_value(shift));
     }
     for(int col_screen = 0 ; col_screen < 8 ; col_screen++)
     {
@@ -287,13 +287,13 @@ static void menu_draw()
                     LCD_Puts(0, 1, trend_auto_h ? "      ON" : "     OFF");
                     break;
                 case SCREEN_TREND_V_SCALE:
-                    LCD_Puts(1, 0, menu_level == 0 ? "V-Scal:":"V-Scal?");
+                    LCD_Puts(1, 0, menu_level == 1 ? "V-Scal:":"V-Scal?");
                     LCD_Puts(0, 1, "        ");
                     sprintf(screen_buffer, "%ld.%02ld", trend_v_scale / 100, trend_v_scale % 100);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_TREND_H_SCALE:
-                    LCD_Puts(1, 0, menu_level == 0 ? "H-Scal:":"H-Scal?");
+                    LCD_Puts(1, 0, menu_level == 1 ? "H-Scal:":"H-Scal?");
                     LCD_Puts(0, 1, "        ");
                     sprintf(screen_buffer, "%ld", trend_h_scale);
                     LCD_Puts(0, 1, screen_buffer);
@@ -647,11 +647,11 @@ void menu_run()
                     {
                     // Update v scale
                     uint32_t multiplier;
-                    if(trend_v_scale > 1000)
+                    if(trend_v_scale > 1000 || ((trend_v_scale == 1000) && (encoder_increment > 0)))
                     {
                         multiplier = 1000;
                     }
-                    else if(trend_v_scale > 100)
+                    if(trend_v_scale > 100 || ((trend_v_scale == 100) && (encoder_increment > 0)))
                     {
                         multiplier = 100;
                     }

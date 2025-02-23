@@ -52,6 +52,9 @@ void gpsdo(void)
     }
     contrast = ee_storage.contrast;
     update_contrast();
+    if (ee_storage.pps_sync_on == 0xff) {
+        ee_storage.pps_sync_on = true;
+    }
     pps_sync_on = ee_storage.pps_sync_on;
     if (ee_storage.pps_sync_delay == 0xffffffff) {
         ee_storage.pps_sync_delay = 10;
@@ -61,10 +64,22 @@ void gpsdo(void)
         ee_storage.pps_sync_threshold = 30000;
     }
     pps_sync_threshold = ee_storage.pps_sync_threshold;
+    if (ee_storage.pps_ppm_auto_sync == 0xff) {
+        ee_storage.pps_ppm_auto_sync = true;
+    }
     pps_ppm_auto_sync = ee_storage.pps_ppm_auto_sync;
+    if (ee_storage.pwm_auto_save == 0xff) {
+        ee_storage.pwm_auto_save = true;
+    }
     pwm_auto_save = ee_storage.pwm_auto_save;
 
+    if (ee_storage.trend_auto_v == 0xff) {
+        ee_storage.trend_auto_v = true;
+    }
     trend_auto_v = ee_storage.trend_auto_v;
+    if (ee_storage.trend_auto_h == 0xff) {
+        ee_storage.trend_auto_h = true;
+    }
     trend_auto_h = ee_storage.trend_auto_h;
     if (ee_storage.trend_v_scale == 0xffffffff) {
         ee_storage.trend_v_scale = 70;
