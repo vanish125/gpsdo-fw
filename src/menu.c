@@ -124,7 +124,7 @@ static uint32_t get_trend_value(uint32_t position, uint32_t shift, uint32_t h_sc
         uint32_t result = 0;
         for(uint32_t i = 0 ; i < h_scale ; i ++)
         {
-            result += get_trend_value(position + i,shift,0);
+            result += get_trend_value((position*h_scale) + i,shift,0);
         }
         return result/h_scale;
     }
@@ -181,15 +181,34 @@ static uint32_t menu_roud_v_scale(uint32_t scale)
     return rounded_scale;
 }
 
+static uint32_t menu_roud_h_scale(uint32_t scale)
+{
+    uint32_t rounded_scale = 0;
+    if(scale > TREND_MAX_H_SCALE)
+    {
+        rounded_scale = TREND_MAX_H_SCALE;
+    }
+    else if(scale < 1)
+    {
+        rounded_scale = 1;
+    }
+    else
+    {   // Only keep powers of 2
+        uint8_t shift = 6;
+        while(rounded_scale == 0)
+        {
+            rounded_scale = ((scale >> shift) << shift);
+            shift--;
+        }
+    }
+    return rounded_scale;
+}
+
 static void menu_draw_trend(uint32_t shift)
 {   // Horizontal autoscale
     if(trend_auto_h && (ppb_trend_size >= trend_h_scale * TREND_SCREEN_SIZE))
     {   // Need to zoom horizontally
-        trend_h_scale = ppb_trend_size/TREND_SCREEN_SIZE;
-        if(trend_h_scale > TREND_MAX_H_SCALE)
-        {
-            trend_h_scale = TREND_MAX_H_SCALE;
-        }
+        trend_h_scale = menu_roud_h_scale(ppb_trend_size/TREND_SCREEN_SIZE);
     }
     // Vertical auto-scale
     if(trend_auto_v)
@@ -269,8 +288,8 @@ static void menu_draw()
                         menu_draw_trend(0);
                     }
                     else
-                    {
-                        menu_format_ppb(ppb_string,get_trend_value(trend_shift,0,trend_h_scale));
+                    {   // Show value at the left of the screen
+                        menu_format_ppb(ppb_string,get_trend_value(TREND_SCREEN_SIZE-1,trend_shift,trend_h_scale));
                         sprintf(screen_buffer, "%03ld%c%s", trend_shift,trend_arrow,ppb_string);
                         LCD_Puts(0, 0, screen_buffer);
                         menu_draw_trend(trend_shift);
@@ -668,14 +687,7 @@ void menu_run()
                 case SCREEN_TREND_H_SCALE:
                     // Update v scale
                     trend_h_scale = encoder_increment > 0 ? trend_h_scale * 2 : trend_h_scale/2;
-                    if(trend_h_scale > TREND_MAX_H_SCALE)
-                    {
-                        trend_h_scale = TREND_MAX_H_SCALE;
-                    }
-                    else if(trend_h_scale < 1)
-                    {
-                        trend_h_scale = 1;
-                    }
+                    trend_h_scale = menu_roud_h_scale(trend_h_scale);
                     LCD_Clear();
                     menu_force_redraw();
                     break;
