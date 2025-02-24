@@ -20,7 +20,7 @@ extern uint32_t trend_v_scale;
 extern uint32_t trend_h_scale; 
 
 
-
+void menu_set_current_menu(uint8_t current_menu);
 bool rotary_get_click();
 void menu_run();
 void lcd_create_chars();

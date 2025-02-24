@@ -14,10 +14,11 @@
 #include "menu.h"
 
 /// All times in ms
-#define DEBOUNCE_TIME        50
+#define DEBOUNCE_TIME           50
+#define BOOT_MENU_SAVE_TIME     3*1000
 
 // Firmware version tag
-#define FIRMWARE_VERSION    "v0.1.4"
+#define FIRMWARE_VERSION        "v0.1.5"
 
 volatile uint32_t rotary_down_time      = 0;
 volatile uint32_t rotary_up_time        = 0;
@@ -78,6 +79,8 @@ static menu_ppb_screen current_menu_ppb_screen = SCREEN_PPB_MEAN;
 static menu_pps_screen current_menu_pps_screen = SCREEN_PPS_SHIFT;
 static uint8_t      menu_level          = 0;
 static uint32_t     last_encoder_value  = 0;
+static uint32_t     last_menu_change    = 0;
+
 static bool         auto_save_pwm_done  = false;
 static bool         auto_sync_pps_done  = false;
 
@@ -96,6 +99,14 @@ uint8_t     trend_arrow = TREND_LEFT_CODE;
 
 bool    trend_auto_h = true;
 bool    trend_auto_v = true;
+
+void menu_set_current_menu(uint8_t current_menu)
+{
+    if(current_menu > 0 && current_menu < SCREEN_MAX)
+    {
+        current_menu_screen = current_menu;
+    }
+}
 
 
 static void menu_force_redraw() { refresh_screen = true; }
@@ -572,6 +583,10 @@ void menu_run()
         {   // Main menu => change menu screen
             current_menu_screen =  (current_menu_screen + encoder_increment) % SCREEN_MAX;
             if(current_menu_screen >= SCREEN_MAX) current_menu_screen = SCREEN_MAX-1; // Roll over for first sceen - 1
+            if(current_menu_screen != previous_menu_screen)
+            {
+                last_menu_change = HAL_GetTick();
+            }
             LCD_Clear();
             menu_force_redraw();
         }
@@ -1026,6 +1041,26 @@ void menu_run()
                 LCD_Puts(0, 0, "  PWM  ");
                 LCD_Puts(0, 1, "SAVED !");
             }
+        }
+
+        // Check if boot menu has to be changed
+        if(last_menu_change != 0 && ((HAL_GetTick() - last_menu_change) > BOOT_MENU_SAVE_TIME))
+        {   // Filter on eligible boot screens
+            switch (current_menu_screen)
+            {
+                case SCREEN_MAIN:
+                case SCREEN_TREND:
+                    if(ee_storage.boot_menu != current_menu_screen)
+                    {
+                        ee_storage.boot_menu = current_menu_screen;
+                        EE_Write();
+                    }
+                    break;
+                
+                default:
+                    break;
+            }
+            last_menu_change = 0;
         }
     }
 }

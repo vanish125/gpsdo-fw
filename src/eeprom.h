@@ -18,6 +18,7 @@ typedef struct
     uint8_t  trend_auto_v;   
     uint32_t trend_v_scale;
     uint32_t trend_h_scale;
+    uint8_t  boot_menu;
 } ee_storage_t;
 
 extern ee_storage_t ee_storage;
