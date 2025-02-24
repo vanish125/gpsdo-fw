@@ -129,8 +129,8 @@ static uint32_t get_trend_value(uint32_t position, uint32_t shift, uint32_t h_sc
         uint32_t result = 0;
         uint32_t new_value;
         for(uint32_t i = 0 ; i < h_scale ; i ++)
-        {
-            new_value = get_trend_data((position*h_scale) + i - (TREND_SCREEN_SIZE*h_scale) - shift);
+        {   // ' - (ppb_trend_position % h_scale)' : Use the same start position for each point in time within the given scale group
+            new_value = get_trend_data((position*h_scale) + i - (TREND_SCREEN_SIZE*h_scale) - (ppb_trend_position % h_scale) - shift);
             if(new_value == TREND_UNSET_VALUE)
             {   // Don't compte mean value if one value is unset
                 return TREND_UNSET_VALUE;
@@ -294,7 +294,7 @@ static void menu_draw()
                     if(menu_level == 1)
                     {
                         menu_format_ppb(ppb_string,frequency_get_ppb());
-                        sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
+                        sprintf(screen_buffer, "%02d/%s", num_sats, ppb_string);
                         LCD_Puts(1, 0, screen_buffer);
                         menu_draw_trend(0);
                     }
