@@ -18,6 +18,13 @@ This alternative firmware has a 2 level menu system. Moving from one menu item t
 
 Here is the menu tree :
 - `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
+- `Trend Screen`: displays the number of detected satellites, the current PPB value and a graphical representation of the PPB trend over time
+  - `Trend Main Screen`: same as above, press the encoder to enter navigation mode (scroll trend data over time by rotating the encoder)
+  - `Auto vertical scale`: press to set the auto-vertical-scale status (when set to `ON`, vertical scale will be automatically adjusted to match the displayed trend values)
+  - `Auto horizontal scale`: press to set the auto-horizontal-scale status (when set to `ON`, horizontal scale will be automatically adjusted to show available data)
+  - `Vertical scale`: shows the current vertical scale (value of the max PPM in the graph), if auto-vertical-scale is off, press the encoder to set the vertical scale value
+  - `Horizontal scale`: shows the current horizontal scale (number of seconds represented by a point in the trend graph), if auto-horizontal-scale is off, press the encoder to set the horizontal scale value
+  - `Exit`: press to exit the Trend sub-menu
 - `PPB Screen`: displays current PPB value
   - `Mean value`: the mean PPB value (running average over 128 seconds)
   - `Instant value`: last calculated PPB value
