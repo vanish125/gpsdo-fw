@@ -61,6 +61,18 @@ Here is the menu tree :
 The top left corner of the `Main Scren` contains an indicator for PPS pulses. Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error.
 Bottom line is the current UTC time from GPS module.
 
+#### Trend screen
+![Trend Screen](https://github.com/fredzo/gpsdo-fw/blob/main/doc/trend-screen.jpg?raw=true)
+The top left corner of the `Trend Scren` contains an indicator for PPS pulses (using default characters from the LCD driver, custom characters beeing used for graphical trend display).
+Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error.
+Bottom line is a graphical representation of the PPM trend over time.
+
+Trend menu gives access to trend navigation, and scale settings:
+![Trend Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/trend-menu.png?raw=true)
+
+#### Boot Screen
+After boot, the GPSDO will automatically display the last used screen between `Main Scren` and `Trend Scren`.
+
 #### PPB Menu
 ![PPB Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-menu.png?raw=true)
 
