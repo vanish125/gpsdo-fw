@@ -22,7 +22,7 @@ Here is the menu tree :
   - `Trend Main Screen`: same as above, press the encoder to enter navigation mode (scroll trend data over time by rotating the encoder)
   - `Auto vertical scale`: press to set the auto-vertical-scale status (when set to `ON`, vertical scale will be automatically adjusted to match the displayed trend values)
   - `Auto horizontal scale`: press to set the auto-horizontal-scale status (when set to `ON`, horizontal scale will be automatically adjusted to show available data)
-  - `Vertical scale`: shows the current vertical scale (value of the max PPM in the graph), if auto-vertical-scale is off, press the encoder to set the vertical scale value
+  - `Vertical scale`: shows the current vertical scale (value of the max PPB in the graph), if auto-vertical-scale is off, press the encoder to set the vertical scale value
   - `Horizontal scale`: shows the current horizontal scale (number of seconds represented by a point in the trend graph), if auto-horizontal-scale is off, press the encoder to set the horizontal scale value
   - `Exit`: press to exit the Trend sub-menu
 - `PPB Screen`: displays current PPB value
@@ -32,8 +32,8 @@ Here is the menu tree :
   - `Error`: the last measured frequency error (in Hz)
   - `Correction`: the last correction applied to PWM value
   - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
-  - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPM mean value reaches 0)
-  - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPM mean value reaches 0)
+  - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
+  - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
 - `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
 - `GPS Screen`: displays the number of detected satellites and the current GPS time
   - `Time`: the current GPS time
@@ -60,6 +60,18 @@ Here is the menu tree :
 ![Main Screen](https://github.com/fredzo/gpsdo-fw/blob/main/doc/main-screen.jpg?raw=true)
 The top left corner of the `Main Scren` contains an indicator for PPS pulses. Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error.
 Bottom line is the current UTC time from GPS module.
+
+#### Trend screen
+![Trend Screen](https://github.com/fredzo/gpsdo-fw/blob/main/doc/trend-screen.jpg?raw=true)
+The top left corner of the `Trend Scren` contains an indicator for PPS pulses (using default characters from the LCD driver, custom characters beeing used for graphical trend display).
+Next to that is the current number of satellites used by the GPS module. To the right of that is the current measured PPB error.
+Bottom line is a graphical representation of the PPB trend over time.
+
+Trend menu gives access to trend navigation, and scale settings:
+![Trend Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/trend-menu.png?raw=true)
+
+#### Boot Screen
+After boot, the GPSDO will automatically display the last used screen between `Main Scren` and `Trend Scren`.
 
 #### PPB Menu
 ![PPB Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-menu.png?raw=true)
@@ -93,7 +105,7 @@ This output, compared to the PPS output of the original design, is available aft
 
 If `Sync` mode is on, the MCU controlled PPS output will be synchronized to the GPS PPS output as soon as the GPS module gets a fix. The deviation between the two PPS outputs will then be monitored and the MCU controlled PPS output will be resynced to the GPS PPS output as soon as it deviates from more than `threshold` clock cycles during more than `delay` seconds.
 
-If the `PPS auto resync` is set to `ON` in the `PPB` menu, the MCU controlled PPS Output will also be automatically resynced to the GPS PPS Output the first time PPM mean value reaches 0.
+If the `PPS auto resync` is set to `ON` in the `PPB` menu, the MCU controlled PPS Output will also be automatically resynced to the GPS PPS Output the first time PPB mean value reaches 0.
 
 The dedicated `PPS` menu allows monitoring the deviation between the MCU controlled PPS output and the GPS PPS output and setting the synchronization parameters:
   - The `Shift` entry shows the shift between MCU PPS output and GPS PPS output in clock cycles
