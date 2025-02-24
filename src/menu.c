@@ -84,10 +84,11 @@ static uint32_t     last_menu_change    = 0;
 static bool         auto_save_pwm_done  = false;
 static bool         auto_sync_pps_done  = false;
 
-#define TREND_MAX_SIZE      2*3600
+#define TREND_MAX_SIZE      7208 // 112 * 64 (TREND_MAX_H_SCALE) + 40 (TREND_SCREEN_SIZE)
 #define TREND_SCREEN_SIZE   40
 #define TREND_UNSET_VALUE   0xFFFF
 #define TREND_MAX_H_SCALE   64
+#define TREND_MAX_SHIFT     7168 // 7208 (TREND_MAX_SIZE) - 40 (TREND_SCREEN_SIZE)
 static uint16_t     ppb_trend_values[TREND_MAX_SIZE];
 static uint32_t     ppb_trend_position = 0;
 static uint32_t     ppb_trend_size = 0;
@@ -661,12 +662,12 @@ void menu_run()
                     if(new_trend_shift < 0)
                     {
                         trend_shift = 0;
-                        encoder_increment = TREND_LEFT_CODE;
+                        trend_arrow = TREND_LEFT_CODE;
                     }
-                    else if(trend_shift >= (TREND_MAX_SIZE-TREND_SCREEN_SIZE))
+                    else if(new_trend_shift >= TREND_MAX_SHIFT)
                     {
-                        trend_shift = TREND_MAX_SIZE-TREND_SCREEN_SIZE-1;
-                        encoder_increment = TREND_RIGHT_CODE;
+                        trend_shift = TREND_MAX_SHIFT;
+                        trend_arrow = TREND_RIGHT_CODE;
                     }
                     else
                     {
@@ -816,7 +817,10 @@ void menu_run()
                             // Prevent editing h scale if auto-h is on
                             menu_level = trend_auto_h ? 1 : 2;
                             break;
+                        case SCREEN_TREND_EXIT:
                         default:
+                            // Go back to main screen to prevent returning to exit screen
+                            current_menu_trend_screen = SCREEN_TREND_MAIN;
                             menu_level = 0;
                             break;
                     }
