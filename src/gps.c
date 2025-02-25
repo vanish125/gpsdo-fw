@@ -11,10 +11,18 @@
 
 #define MAX_GPS_LINE 512
 
-char   gps_line[MAX_GPS_LINE];
-char   gps_time[9]  = { '\0' };
-char   num_sats     = 0;
-size_t gps_line_len = 0;
+char     gps_line[MAX_GPS_LINE];
+char     gps_time[9]      = { '\0' };
+char     gps_latitude[9]  = { '\0' };
+char     gps_longitude[9] = { '\0' };
+char     gps_n_s[2]       = { '\0' };
+char     gps_e_w[2]       = { '\0' };
+double   gps_msl_altitude;
+double   gps_geoid_separation;
+char     gps_hdop[9]      = { '\0' };
+uint8_t  num_sats         = 0;
+uint32_t gga_frames       = 0;
+size_t   gps_line_len     = 0;
 
 #define FIFO_BUFFER_SIZE 256
 
@@ -118,13 +126,68 @@ void gps_parse(char* line)
         gps_time[7] = pch[5];
         gps_time[8] = '\0';
 
-        strtok(NULL, ",");
-        strtok(NULL, ",");
-        strtok(NULL, ",");
-        strtok(NULL, ",");
+        pch = strtok(NULL, ","); // Latitude
+        if(strstr(pch,".") != NULL)
+        {
+            uint8_t i = 0;
+            uint8_t j = 0;
+            bool lead = true;
+            while(pch[i] != 0 && j < (sizeof(gps_latitude)-1))
+            {
+                if(pch[i] != '.' && (pch[i] != '0'||!lead))
+                {
+                    gps_latitude[j] = pch[i];
+                    j++;
+                    lead = false;
+                }
+                i++;
+            }
+            gps_latitude[j] = 0;
+        }
+        pch = strtok(NULL, ","); // N/S
+        if(strlen(pch)<sizeof(gps_n_s))
+        {
+            strcpy(gps_n_s,pch);
+        }
+        pch = strtok(NULL, ","); // Longitude
+        if(strstr(pch,".") != NULL)
+        {
+            uint8_t i = 0;
+            uint8_t j = 0;
+            bool lead = true;
+            while(pch[i] != 0 && j < (sizeof(gps_longitude)-1))
+            {
+                if(pch[i] != '.' && (pch[i] != '0'||!lead))
+                {
+                    gps_longitude[j] = pch[i];
+                    j++;
+                    lead = false;
+                }
+                i++;
+            }
+            gps_longitude[j] = 0;
+        }
+        pch = strtok(NULL, ","); // E/W
+        if(strlen(pch)<sizeof(gps_e_w))
+        {
+            strcpy(gps_e_w,pch);
+        }
         strtok(NULL, ","); // Fix
 
         num_sats = atoi(strtok(NULL, ",")); // Num sats used
+
+        pch = strtok(NULL, ","); // HDOP
+        if(strlen(pch)<sizeof(gps_hdop))
+        {
+            strcpy(gps_hdop,pch);
+        }
+        
+        gps_msl_altitude = atof(strtok(NULL, ",")); // MSL Elevation
+        strtok(NULL, ","); // Unit
+        gps_geoid_separation = atof(strtok(NULL, ",")); // Geoid Separation
+        // strtok(NULL, ","); // Unit
+
+        gga_frames++;
     }
 }
 

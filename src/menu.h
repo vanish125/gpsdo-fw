@@ -3,9 +3,27 @@
 
 #include <stdbool.h>
 
-extern volatile int menu_printing;
+// Char code for sat icons
+#define SAT_ICON_1_CODE         '-'//0x7F
+#define SAT_ICON_2_CODE         '='//'-'
+#define SAT_ICON_3_CODE         0xC6//0x7E
+// Char code for no sat icon
+#define NO_SAT_ICON_CODE        0x04
+#define NO_SAT_STD_ICON_CODE    '!'
+// Char codes for trend view
+#define TREND_LEFT_CODE         0x7F
+#define TREND_RIGHT_CODE        0x7E
 
+extern bool trend_auto_h;
+extern bool trend_auto_v;
+extern uint32_t trend_v_scale; 
+extern uint32_t trend_h_scale; 
+
+
+void menu_set_current_menu(uint8_t current_menu);
 bool rotary_get_click();
 void menu_run();
+void lcd_create_chars();
+void init_trend_values();
 
 #endif
