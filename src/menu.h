@@ -19,8 +19,11 @@ extern bool trend_auto_v;
 extern uint32_t trend_v_scale; 
 extern uint32_t trend_h_scale; 
 
+extern uint32_t gps_baudrate;
+
 
 void menu_set_current_menu(uint8_t current_menu);
+void menu_set_gps_baudrate(uint32_t baudrate);
 bool rotary_get_click();
 void menu_run();
 void lcd_create_chars();

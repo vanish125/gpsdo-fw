@@ -68,9 +68,12 @@ void lcd_create_chars()
 
 typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
-typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_MAX } menu_gps_screen;
+typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_MAX } menu_pps_screen;
+
+// Possible baudrate values
+typedef enum { BAUDRATE_9600, BAUDRATE_19200, BAUDRATE_38400, BAUDRATE_57600, BAUDRATE_115200, BAUDRATE_230400, BAUDRATE_460800, BAUDRATE_921600, BAUDRATE_MAX} baudrate;
 
 static menu_screen current_menu_screen = SCREEN_MAIN;
 static menu_trend_screen current_menu_trend_screen = SCREEN_TREND_MAIN;
@@ -98,8 +101,93 @@ uint32_t    trend_h_scale = 1;
 uint32_t    trend_shift = 0; 
 uint8_t     trend_arrow = TREND_LEFT_CODE;
 
-bool    trend_auto_h = true;
-bool    trend_auto_v = true;
+bool        trend_auto_h = true;
+bool        trend_auto_v = true;
+
+uint32_t    gps_baudrate = GPS_DEFAULT_BAUDRATE;
+baudrate    gps_baudrate_enum = BAUDRATE_9600;
+
+uint32_t menu_get_baudrate_value(baudrate baudrate_enum)
+{
+    uint32_t result;
+    switch (baudrate_enum)
+    {
+        default:
+        case BAUDRATE_9600:
+            result = 9600;
+            break;
+        case BAUDRATE_19200:
+            result = 19200;
+            break;
+        case BAUDRATE_38400:
+            result = 38400;
+            break;
+        case BAUDRATE_57600:
+            result = 57600;
+            break;
+        case BAUDRATE_115200:
+            result = 115200;
+            break;
+        case BAUDRATE_230400:
+            result = 230400;
+            break;
+        case BAUDRATE_460800:
+            result = 460800;
+            break;
+        case BAUDRATE_921600:
+            result = 921600;
+            break;
+    }
+    return result;
+}
+
+baudrate menu_get_baudrate_enum(uint32_t baudrate_value)
+{
+    baudrate result;
+    if(baudrate_value <= 9600)
+    {
+        result = BAUDRATE_9600;
+    }
+    else if(baudrate_value <= 19200)
+    {
+        result = BAUDRATE_19200;
+    }
+    else if(baudrate_value <= 38400)
+    {
+        result = BAUDRATE_38400;
+    }
+    else if(baudrate_value <= 57600)
+    {
+        result = BAUDRATE_57600;
+    }
+    else if(baudrate_value <= 115200)
+    {
+        result = BAUDRATE_115200;
+    }
+    else if(baudrate_value <= 230400)
+    {
+        result = BAUDRATE_230400;
+    }
+    else if(baudrate_value <= 460800)
+    {
+        result = BAUDRATE_460800;
+    }
+    else // if(baudrate_value <= 921600)
+    {
+        result = BAUDRATE_921600;
+    }
+    return result;
+}
+
+void menu_set_gps_baudrate(uint32_t baudrate)
+{
+    if(baudrate != gps_baudrate)
+    {   // Baudrate changed
+        gps_baudrate = baudrate;
+        gps_baudrate_enum = menu_get_baudrate_enum(baudrate);
+        gps_reconfigure_uart(gps_baudrate);
+    }
+}
 
 void menu_set_current_menu(uint8_t current_menu)
 {
@@ -471,6 +559,11 @@ static void menu_draw()
                     LCD_Puts(1, 0, "HDOP:");
                     LCD_Puts(0, 1, gps_hdop);
                     break;
+                case SCREEN_GPS_BAUDRATE:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Baud:":"Baud?");
+                    sprintf(screen_buffer, "%ld", gps_baudrate);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
             }
         }
         break;
@@ -742,6 +835,22 @@ void menu_run()
                     break;
             }
         }
+        else if(menu_level == 2 && current_menu_screen == SCREEN_GPS)
+        {   // Sub-sub menu for PPB screen
+            switch(current_menu_gps_screen)
+            {
+                case SCREEN_GPS_BAUDRATE:
+                    // Update baudrate
+                    gps_baudrate_enum =  (gps_baudrate_enum + encoder_increment) % BAUDRATE_MAX;
+                    if(gps_baudrate_enum >= BAUDRATE_MAX) gps_baudrate_enum = BAUDRATE_MAX-1; // Roll over for first sceen - 1
+                    gps_baudrate = menu_get_baudrate_value(gps_baudrate_enum);
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                default:
+                    break;
+            }
+        }
         else if(menu_level == 2 && current_menu_screen == SCREEN_PPS)
         {   // Sub-sub menu for PPS screen
             switch(current_menu_pps_screen)
@@ -850,6 +959,17 @@ void menu_run()
                             break;
                     }
                     break;
+                case SCREEN_GPS:
+                    switch(current_menu_gps_screen)
+                    {
+                        case SCREEN_GPS_BAUDRATE:
+                            menu_level = 2;
+                            break;
+                        default:
+                            menu_level = 0;
+                            break;
+                    }
+                    break;
                 case SCREEN_PPS:
                     switch(current_menu_pps_screen)
                     {
@@ -920,6 +1040,23 @@ void menu_run()
                     {   // Save changes
                         ee_storage.pps_ppm_auto_sync = pps_ppm_auto_sync;
                         EE_Write();
+                    }
+                    break;
+                default:
+                    break;
+            }
+            menu_level = 1;
+            LCD_Clear();
+        } else  if (menu_level == 2 && current_menu_screen == SCREEN_GPS){
+            switch(current_menu_gps_screen)
+            {
+                case SCREEN_GPS_BAUDRATE:
+                    if(ee_storage.gps_baudrate != gps_baudrate)
+                    {   // Save changes
+                        ee_storage.gps_baudrate = gps_baudrate;
+                        EE_Write();
+                        // Reconfigure uart
+                        gps_reconfigure_uart(gps_baudrate);
                     }
                     break;
                 default:

@@ -94,6 +94,11 @@ void gpsdo(void)
         ee_storage.boot_menu = 0; // Default to main screen
     }
     menu_set_current_menu(ee_storage.boot_menu);
+    // Check for custom gps baudrate
+    if (ee_storage.gps_baudrate == 0xffffffff) {
+        ee_storage.gps_baudrate = GPS_DEFAULT_BAUDRATE;
+    }
+    menu_set_gps_baudrate(ee_storage.gps_baudrate);
 
     LCD_Init();
 

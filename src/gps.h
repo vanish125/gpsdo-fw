@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define GPS_DEFAULT_BAUDRATE    9600
+
 extern char     gps_time[];
 extern char     gps_latitude[];
 extern char     gps_longitude[];
@@ -17,5 +19,7 @@ extern uint32_t gga_frames;
 void gps_start_it();
 void gps_parse(char* line);
 void gps_read();
+
+void gps_reconfigure_uart(uint32_t baudrate);
 
 #endif
