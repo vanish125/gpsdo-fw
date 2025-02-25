@@ -74,27 +74,6 @@ bool fifo_read(volatile fifo_buffer_t* fifo, uint8_t* c)
 volatile uint8_t gps_it_buf[GPS_RX_BUFFER_SIZE];
 volatile uint8_t comm_it_buf[COMM_RX_BUFFER_SIZE];
 
-void gps_reconfigure_uart(uint32_t baudrate)
-{
-    /*HAL_UART_DeInit(&huart3);
-    huart3.Instance = USART3;
-    huart3.Init.BaudRate = baudrate;
-    huart3.Init.WordLength = UART_WORDLENGTH_8B;
-    huart3.Init.StopBits = UART_STOPBITS_1;
-    huart3.Init.Parity = UART_PARITY_NONE;
-    huart3.Init.Mode = UART_MODE_TX_RX;
-    huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    huart3.Init.OverSampling = UART_OVERSAMPLING_16;
-    if (HAL_UART_Init(&huart3) != HAL_OK)
-    {
-      Error_Handler();
-    }*/
-    USART3->CR1 &= ~(USART_CR1_UE);
-    USART3->BRR = UART_BRR_SAMPLING16(HAL_RCC_GetPCLK1Freq(),baudrate);
-    USART3->CR1 |= USART_CR1_UE;
-}
-
-
 static void gps_start_gps_rx()
 {
     if (HAL_UART_Receive_DMA(&huart3, (uint8_t*)gps_it_buf, GPS_RX_BUFFER_SIZE) != HAL_OK) {
@@ -106,6 +85,28 @@ static void gps_start_comm_rx()
     if (HAL_UART_Receive_DMA(&huart2, (uint8_t*)comm_it_buf, COMM_RX_BUFFER_SIZE) != HAL_OK) {
         Error_Handler();
     }
+}
+
+void gps_reconfigure_uart(uint32_t baudrate)
+{
+    HAL_UART_DeInit(&huart3);
+    // Wait for buffers to be consumed
+    HAL_Delay(50);
+    huart3.Instance = USART3;
+    huart3.Init.BaudRate = baudrate;
+    huart3.Init.WordLength = UART_WORDLENGTH_8B;
+    huart3.Init.StopBits = UART_STOPBITS_1;
+    huart3.Init.Parity = UART_PARITY_NONE;
+    huart3.Init.Mode = UART_MODE_TX_RX;
+    huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(&huart3) != HAL_OK)
+    {
+      Error_Handler();
+    }
+    // Wait Uart to init
+    HAL_Delay(50);
+    gps_start_gps_rx();
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
