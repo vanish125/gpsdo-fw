@@ -18,14 +18,14 @@ This alternative firmware has a 2 level menu system. Moving from one menu item t
 
 Here is the menu tree :
 - `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
-- `Trend Screen`: displays the number of detected satellites, the current PPB value and a graphical representation of the PPB trend over time
+- `Trend Menu`: displays the number of detected satellites, the current PPB value and a graphical representation of the PPB trend over time
   - `Trend Main Screen`: same as above, press the encoder to enter navigation mode (scroll trend data over time by rotating the encoder)
   - `Auto vertical scale`: press to set the auto-vertical-scale status (when set to `ON`, vertical scale will be automatically adjusted to match the displayed trend values)
   - `Auto horizontal scale`: press to set the auto-horizontal-scale status (when set to `ON`, horizontal scale will be automatically adjusted to show available data)
   - `Vertical scale`: shows the current vertical scale (value of the max PPB in the graph), if auto-vertical-scale is off, press the encoder to set the vertical scale value
   - `Horizontal scale`: shows the current horizontal scale (number of seconds represented by a point in the trend graph), if auto-horizontal-scale is off, press the encoder to set the horizontal scale value
   - `Exit`: press to exit the Trend sub-menu
-- `PPB Screen`: displays current PPB value
+- `PPB Menu`: displays current PPB value
   - `Mean value`: the mean PPB value (running average over 128 seconds)
   - `Instant value`: last calculated PPB value
   - `Frequency`: the measured current MCU frequency (based on the number ot ticks counted between two GPS PPS pulses, should be around 70 000 000 for 70 MHz)
@@ -35,7 +35,7 @@ Here is the menu tree :
   - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
   - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
 - `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
-- `GPS Screen`: displays the number of detected satellites and the current GPS time
+- `GPS Menu`: displays the number of detected satellites and the current GPS time
   - `Time`: the current GPS time
   - `Latitude`: the GPS detected latitude (format: ddmm(.)mmmm)
   - `Longitude`: the GPS detected longitude (format: ddmm(.)mmmm)
@@ -43,10 +43,11 @@ Here is the menu tree :
   - `Geoid`: the Geoid-to-ellipsoid separation (in meters)
   - `Sat. #`: the numner of satellites
   - `HDOP`: the current Horizontal Dilution Of Precision value
+  - `Baudrate`: set the GPS UART communication baudrate (only change this if you have replaced or reconfigured the GPS module of your GPSDO)
 - `Uptime Screen` : displays the number of seconds elapsed since last boot
 - `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
 - `Contrast Screen` : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
-- `PPS Screen`: This menu is dedicated to the [MCU controlled PPS output](https://github.com/fredzo/gpsdo-fw?tab=readme-ov-file#mcu-controlled-pps-output) ; it shows the number of times the MCU PPS Output has been synced (top left) and the shift with GPS PPS output in clock cycles (bottom)
+- `PPS Menu`: This menu is dedicated to the [MCU controlled PPS output](https://github.com/fredzo/gpsdo-fw?tab=readme-ov-file#mcu-controlled-pps-output) ; it shows the number of times the MCU PPS Output has been synced (top left) and the shift with GPS PPS output in clock cycles (bottom)
   - `Shift`: the shift between MCU PPS output and GPS PPS output in clock cycles
   - `Shift milliseconds`: the shift between MCU PPS output and GPS PPS output in milliseconds
   - `Sync Count`: the number of times the MCU PPS output has been re-synced to the GPS PPS output
