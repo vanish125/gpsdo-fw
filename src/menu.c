@@ -68,9 +68,9 @@ void lcd_create_chars()
 
 typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
-typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_MAX } menu_gps_screen;
-typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_MAX } menu_ppb_screen;
-typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_MAX } menu_pps_screen;
+typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
+typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
+typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_EXIT, SCREEN_PPS_MAX } menu_pps_screen;
 
 // Possible baudrate values
 typedef enum { BAUDRATE_9600, BAUDRATE_19200, BAUDRATE_38400, BAUDRATE_57600, BAUDRATE_115200, BAUDRATE_230400, BAUDRATE_460800, BAUDRATE_921600, BAUDRATE_MAX} baudrate;
@@ -494,6 +494,10 @@ static void menu_draw()
                     LCD_Puts(1, 0, menu_level == 1 ? "PPS S.:":"PPS S.?");
                     LCD_Puts(0, 1, pps_ppm_auto_sync ? "      ON" : "     OFF");
                     break;
+                case SCREEN_PPB_EXIT:
+                    LCD_Puts(1, 0, "Exit?");
+                    LCD_Puts(0, 1, "        ");
+                    break;
             }
         }
         break;
@@ -563,6 +567,10 @@ static void menu_draw()
                     LCD_Puts(1, 0, menu_level == 1 ? "Baud:":"Baud?");
                     sprintf(screen_buffer, "%ld", gps_baudrate);
                     LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_GPS_EXIT:
+                    LCD_Puts(1, 0, "Exit?");
+                    LCD_Puts(0, 1, "        ");
                     break;
             }
         }
@@ -644,6 +652,10 @@ static void menu_draw()
                         sync_pps_out = true;
                         menu_level = 1;
                     }
+                    break;
+                case SCREEN_PPS_EXIT:
+                    LCD_Puts(1, 0, "Exit?");
+                    LCD_Puts(0, 1, "        ");
                     break;
             }
         }
@@ -954,6 +966,11 @@ void menu_run()
                         case SCREEN_PPB_AUTO_SYNC_PPS:
                             menu_level = 2;
                             break;
+                        case SCREEN_PPB_EXIT:
+                            // Go back to main screen to prevent returning to exit screen
+                            current_menu_ppb_screen = SCREEN_PPB_MEAN;
+                            menu_level = 0;
+                            break;
                         default:
                             menu_level = 0;
                             break;
@@ -964,6 +981,11 @@ void menu_run()
                     {
                         case SCREEN_GPS_BAUDRATE:
                             menu_level = 2;
+                            break;
+                        case SCREEN_GPS_EXIT:
+                            // Go back to main screen to prevent returning to exit screen
+                            current_menu_gps_screen = SCREEN_GPS_TIME;
+                            menu_level = 0;
                             break;
                         default:
                             menu_level = 0;
@@ -978,6 +1000,11 @@ void menu_run()
                         case SCREEN_PPS_SYNC_THRESHOLD:
                         case SCREEN_PPS_FORCE_SYNC:
                             menu_level = 2;
+                            break;
+                        case SCREEN_PPS_EXIT:
+                            // Go back to main screen to prevent returning to exit screen
+                            current_menu_pps_screen = SCREEN_PPS_SHIFT;
+                            menu_level = 0;
                             break;
                         default:
                             menu_level = 0;
