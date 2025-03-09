@@ -18,7 +18,7 @@
 #define BOOT_MENU_SAVE_TIME     3*1000
 
 // Firmware version tag
-#define FIRMWARE_VERSION        "v0.1.7"
+#define FIRMWARE_VERSION        "v0.1.8"
 
 volatile uint32_t rotary_down_time      = 0;
 volatile uint32_t rotary_up_time        = 0;
@@ -68,7 +68,7 @@ void lcd_create_chars()
 
 typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
-typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
+typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_EXIT, SCREEN_PPS_MAX } menu_pps_screen;
 
@@ -106,6 +106,8 @@ bool        trend_auto_v = true;
 
 uint32_t    gps_baudrate = GPS_DEFAULT_BAUDRATE;
 baudrate    gps_baudrate_enum = BAUDRATE_9600;
+
+uint8_t     gps_time_offset = 0;	// 0-23
 
 uint32_t menu_get_baudrate_value(baudrate baudrate_enum)
 {
@@ -344,6 +346,9 @@ static void menu_draw_trend(uint32_t shift)
     }
 }
 
+#define PPB_STRING_SIZE     5
+#define SCREEN_BUFFER_SIZE  14
+
 static void menu_format_ppb(char* ppb_string, int32_t ppb_value)
 {
     int32_t ppb = abs(ppb_value);
@@ -353,18 +358,18 @@ static void menu_format_ppb(char* ppb_string, int32_t ppb_value)
     } else if (ppb > 999999) {
         strcpy(ppb_string, ">10k");
     } else if (ppb > 9999) {
-        sprintf(ppb_string, "%4ld", (ppb / 100));
+        snprintf(ppb_string, PPB_STRING_SIZE, "%4ld", (ppb / 100));
     } else if (ppb > 999) {
-        sprintf(ppb_string, "%ld.%01ld", ppb / 100, ((ppb % 100)/10));
+        snprintf(ppb_string, PPB_STRING_SIZE, "%ld.%01ld", ppb / 100, ((ppb % 100)/10));
     } else {
-        sprintf(ppb_string, "%ld.%02ld", ppb / 100, ppb % 100);
+        snprintf(ppb_string, PPB_STRING_SIZE, "%ld.%02ld", ppb / 100, ppb % 100);
     }
 }
 
 static void menu_draw()
 {
-    char    screen_buffer[14];
-    char    ppb_string[5];
+    char    screen_buffer[SCREEN_BUFFER_SIZE];
+    char    ppb_string[PPB_STRING_SIZE];
     int32_t ppb;
 
     switch (current_menu_screen) {
@@ -372,7 +377,7 @@ static void menu_draw()
     case SCREEN_MAIN:
         // Main screen with satellites, ppb and UTC time
         menu_format_ppb(ppb_string,frequency_get_ppb());
-        sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
+        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d %s", num_sats, ppb_string);
         LCD_Puts(1, 0, screen_buffer);
         LCD_Puts(0, 1, gps_time);
         break;
@@ -381,7 +386,7 @@ static void menu_draw()
         if(menu_level == 0)
         {
             menu_format_ppb(ppb_string,frequency_get_ppb());
-            sprintf(screen_buffer, "%02d %s", num_sats, ppb_string);
+            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d %s", num_sats, ppb_string);
             LCD_Puts(1, 0, screen_buffer);
             menu_draw_trend(0);
         }
@@ -394,14 +399,14 @@ static void menu_draw()
                     if(menu_level == 1)
                     {
                         menu_format_ppb(ppb_string,frequency_get_ppb());
-                        sprintf(screen_buffer, "%02d/%s", num_sats, ppb_string);
+                        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d/%s", num_sats, ppb_string);
                         LCD_Puts(1, 0, screen_buffer);
                         menu_draw_trend(0);
                     }
                     else
                     {   // Show value at the left of the screen
                         menu_format_ppb(ppb_string,get_trend_value(TREND_SCREEN_SIZE-1,trend_shift,trend_h_scale));
-                        sprintf(screen_buffer, "%03ld%c%s", trend_shift,trend_arrow,ppb_string);
+                        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%03ld%c%s", trend_shift,trend_arrow,ppb_string);
                         LCD_Puts(0, 0, screen_buffer);
                         menu_draw_trend(trend_shift);
                     }
@@ -419,13 +424,13 @@ static void menu_draw()
                 case SCREEN_TREND_V_SCALE:
                     LCD_Puts(1, 0, menu_level == 1 ? "V-Scal:":"V-Scal?");
                     LCD_Puts(0, 1, "        ");
-                    sprintf(screen_buffer, "%ld.%02ld", trend_v_scale / 100, trend_v_scale % 100);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%02ld", trend_v_scale / 100, trend_v_scale % 100);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_TREND_H_SCALE:
                     LCD_Puts(1, 0, menu_level == 1 ? "H-Scal:":"H-Scal?");
                     LCD_Puts(0, 1, "        ");
-                    sprintf(screen_buffer, "%ld", trend_h_scale);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", trend_h_scale);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_TREND_EXIT:
@@ -442,7 +447,7 @@ static void menu_draw()
             ppb = frequency_get_ppb();
             LCD_Puts(1, 0, "PPB:   ");
             LCD_Puts(0, 1, "        ");
-            sprintf(screen_buffer, "%ld.%02d", ppb / 100, abs(ppb) % 100);
+            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%02d", ppb / 100, abs(ppb) % 100);
             LCD_Puts(0, 1, screen_buffer);
         }
         else
@@ -455,35 +460,35 @@ static void menu_draw()
                 case SCREEN_PPB_MEAN:
                     ppb = frequency_get_ppb();
                     LCD_Puts(1, 0, "Mean:");
-                    sprintf(screen_buffer, "%ld.%02d", ppb / 100, abs(ppb) % 100);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%02d", ppb / 100, abs(ppb) % 100);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_INST:
                     {
                     LCD_Puts(1, 0, "Inst:");
                     int32_t ppb_inst = (int64_t)ppb_error * 1000000000 * 100 / ((int64_t)HAL_RCC_GetHCLKFreq());
-                    sprintf(screen_buffer, "%ld.%02d", ppb_inst / 100, abs(ppb_inst) % 100);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%02d", ppb_inst / 100, abs(ppb_inst) % 100);
                     LCD_Puts(0, 1, screen_buffer);
                     }
                     break;
                 case SCREEN_PPB_FREQUENCY:
                     LCD_Puts(1, 0, "Freq:");
-                    sprintf(screen_buffer, "%ld", ppb_frequency);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", ppb_frequency);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_ERROR:
                     LCD_Puts(1, 0, "Error:");
-                    sprintf(screen_buffer, "%ld", ppb_error);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", ppb_error);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_CORRECTION:
                     LCD_Puts(1, 0, "Corr.:");
-                    sprintf(screen_buffer, "%ld", ppb_correction);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", ppb_correction);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_MILLIS:
                     LCD_Puts(1, 0, "Millis:");
-                    sprintf(screen_buffer, "%ld", ppb_millis);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", ppb_millis);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_AUTO_SAVE_PWM:
@@ -505,13 +510,13 @@ static void menu_draw()
         // Screen with current PPM
         LCD_Puts(1, 0, "PWM:   ");
         LCD_Puts(0, 1, "        ");
-        sprintf(screen_buffer, "%ld", TIM1->CCR2);
+        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", TIM1->CCR2);
         LCD_Puts(0, 1, screen_buffer);
         break;
     case SCREEN_GPS:
         if(menu_level == 0)
         {
-            sprintf(screen_buffer, "GPS:%02d\4", num_sats);
+            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "GPS:%02d\4", num_sats);
             LCD_Puts(1, 0, screen_buffer);
             LCD_Puts(0, 1, gps_time);
         }
@@ -527,12 +532,12 @@ static void menu_draw()
                     LCD_Puts(0, 1, gps_time);
                     break;
                 case SCREEN_GPS_LATITUDE:
-                    sprintf(screen_buffer, "Lat.: %s", gps_n_s);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Lat.: %s", gps_n_s);
                     LCD_Puts(1, 0, screen_buffer);
                     LCD_Puts(0, 1, gps_latitude);
                     break;
                 case SCREEN_GPS_LONGITUDE:
-                    sprintf(screen_buffer, "Long.:%s", gps_e_w);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Long.:%s", gps_e_w);
                     LCD_Puts(1, 0, screen_buffer);
                     LCD_Puts(0, 1, gps_longitude);
                     break;
@@ -541,7 +546,7 @@ static void menu_draw()
                         double alt_int = floor(gps_msl_altitude);
                         double alt_frac = (gps_msl_altitude - alt_int)*10;
                         LCD_Puts(1, 0, "Alt.:");
-                        sprintf(screen_buffer, "%d.%d", ((int)alt_int), ((int)alt_frac));
+                        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%d.%d", ((int)alt_int), ((int)alt_frac));
                         LCD_Puts(0, 1, screen_buffer);
                     }
                     break;
@@ -550,13 +555,13 @@ static void menu_draw()
                         double geoid_int = floor(gps_geoid_separation);
                         double geoid_frac = (gps_geoid_separation - geoid_int)*10;
                         LCD_Puts(1, 0, "Geoid:");
-                        sprintf(screen_buffer, "%d.%d", ((int)geoid_int), ((int)geoid_frac));
+                        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%d.%d", ((int)geoid_int), ((int)geoid_frac));
                         LCD_Puts(0, 1, screen_buffer);
                     }
                     break;
                 case SCREEN_GPS_SATELITES:
                     LCD_Puts(1, 0, "Sat. #:");
-                    sprintf(screen_buffer, "%02d", num_sats);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d", num_sats);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_GPS_HDOP:
@@ -565,7 +570,12 @@ static void menu_draw()
                     break;
                 case SCREEN_GPS_BAUDRATE:
                     LCD_Puts(1, 0, menu_level == 1 ? "Baud:":"Baud?");
-                    sprintf(screen_buffer, "%ld", gps_baudrate);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", gps_baudrate);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_GPS_TIME_OFFSET:
+                    LCD_Puts(1, 0, menu_level == 1 ? "TZ-ofs:":"TZ-ofs?");
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%2d", (int)gps_time_offset);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_GPS_EXIT:
@@ -578,19 +588,19 @@ static void menu_draw()
     case SCREEN_UPTIME:
         LCD_Puts(1, 0, "UPTIME:");
         LCD_Puts(0, 1, "        ");
-        sprintf(screen_buffer, "%ld", device_uptime);
+        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", device_uptime);
         LCD_Puts(0, 1, screen_buffer);
         break;
     case SCREEN_FRAMES:
         LCD_Puts(1, 0, "GGA FR:");
         LCD_Puts(0, 1, "        ");
-        sprintf(screen_buffer, "%ld", gga_frames);
+        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", gga_frames);
         LCD_Puts(0, 1, screen_buffer);
         break;
     case SCREEN_CONTRAST:
         LCD_Puts(1, 0, menu_level == 0 ? "CNTRST:":"CNTRST?");
         LCD_Puts(0, 1, "        ");
-        sprintf(screen_buffer, "%d", contrast);
+        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%d", contrast);
         LCD_Puts(0, 1, screen_buffer);
         break;
     case SCREEN_PPS:
@@ -599,9 +609,9 @@ static void menu_draw()
         LCD_Puts(0, 1, "        ");
         if(menu_level == 0)
         {
-            sprintf(screen_buffer, "PPS:%3ld", pps_sync_count);
+            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "PPS:%3ld", pps_sync_count);
             LCD_Puts(1, 0, screen_buffer);
-            sprintf(screen_buffer, "%ld", pps_error);
+            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", pps_error);
             LCD_Puts(0, 1, screen_buffer);
         }
         else
@@ -612,17 +622,17 @@ static void menu_draw()
                 case SCREEN_PPS_SHIFT:
                     LCD_Puts(1, 0, "Shift:");
                     // Check we have enough space for minus sign
-                    sprintf(screen_buffer, "%ld", (pps_error < -9999999) ? abs(pps_error) : pps_error);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", (pps_error < -9999999) ? abs(pps_error) : pps_error);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPS_SHIFT_MS:
                     LCD_Puts(1, 0, "Sft ms:");
-                    sprintf(screen_buffer, "%ld.%04d", pps_millis / 10000, abs(pps_millis) % 10000);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%04d", pps_millis / 10000, abs(pps_millis) % 10000);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPS_SYNC_COUNT:
                     LCD_Puts(1, 0, "SynCnt:");
-                    sprintf(screen_buffer, "%ld", pps_sync_count);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", pps_sync_count);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPS_SYNC_MODE:
@@ -631,12 +641,12 @@ static void menu_draw()
                     break;
                 case SCREEN_PPS_SYNC_DELAY:
                     LCD_Puts(1, 0, menu_level == 1 ? "Delay:":"Delay?");
-                    sprintf(screen_buffer, "%ld", pps_sync_delay);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", pps_sync_delay);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPS_SYNC_THRESHOLD:
                     LCD_Puts(1, 0, menu_level == 1 ? "Thrsld:":"Thrsld?");
-                    sprintf(screen_buffer, "%ld", pps_sync_threshold);
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", pps_sync_threshold);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPS_FORCE_SYNC:
@@ -853,11 +863,28 @@ void menu_run()
             {
                 case SCREEN_GPS_BAUDRATE:
                     // Update baudrate
-                    gps_baudrate_enum =  (gps_baudrate_enum + encoder_increment) % BAUDRATE_MAX;
-                    if(gps_baudrate_enum >= BAUDRATE_MAX) gps_baudrate_enum = BAUDRATE_MAX-1; // Roll over for first sceen - 1
+                    {
+                    baudrate max_baudrate = BAUDRATE_MAX;
+                    if (gps_is_atgm336h) {
+                        max_baudrate = BAUDRATE_115200 + 1;
+                    }
+                    gps_baudrate_enum =  (gps_baudrate_enum + encoder_increment) % max_baudrate;
+                    if(gps_baudrate_enum >= max_baudrate) gps_baudrate_enum = max_baudrate-1; // Roll over for first sceen - 1
                     gps_baudrate = menu_get_baudrate_value(gps_baudrate_enum);
                     LCD_Clear();
                     menu_force_redraw();
+                    }
+                    break;
+                case SCREEN_GPS_TIME_OFFSET:
+                    // Update time offset
+                    {
+                        gps_time_offset += encoder_increment;
+                        if (gps_time_offset > 23) {
+                            gps_time_offset = (encoder_increment > 0) ? 0 : 23;
+                        }
+                        LCD_Clear();
+                        menu_force_redraw();
+                    }
                     break;
                 default:
                     break;
@@ -987,6 +1014,9 @@ void menu_run()
                             current_menu_gps_screen = SCREEN_GPS_TIME;
                             menu_level = 0;
                             break;
+                        case SCREEN_GPS_TIME_OFFSET:
+                            menu_level = 2;
+                            break;
                         default:
                             menu_level = 0;
                             break;
@@ -1083,7 +1113,15 @@ void menu_run()
                         ee_storage.gps_baudrate = gps_baudrate;
                         EE_Write();
                         // Reconfigure uart
+                        gps_configure_atgm336h(gps_baudrate);
                         gps_reconfigure_uart(gps_baudrate);
+                    }
+                    break;
+                case SCREEN_GPS_TIME_OFFSET:
+                    if(ee_storage.gps_time_offset != gps_time_offset)
+                    {   // Save changes
+                        ee_storage.gps_time_offset = gps_time_offset;
+                        EE_Write();
                     }
                     break;
                 default:

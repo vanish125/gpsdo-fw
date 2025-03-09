@@ -23,6 +23,9 @@ char     gps_hdop[9]      = { '\0' };
 uint8_t  num_sats         = 0;
 uint32_t gga_frames       = 0;
 size_t   gps_line_len     = 0;
+bool     gps_is_atgm336h  = false;
+
+
 
 #define FIFO_BUFFER_SIZE 256
 
@@ -87,11 +90,81 @@ static void gps_start_comm_rx()
     }
 }
 
+// ATGM336H set baudrate commands
+static const char*	atgm336h_baudcommands[] = {
+    "$PCAS01,1*1D\r\n",     // 9600bps
+    "$PCAS01,2*1E\r\n",     // 19200bps
+    "$PCAS01,3*1F\r\n",     // 38400bps
+    "$PCAS01,4*18\r\n",     // 57600bps
+    "$PCAS01,5*19\r\n"      // 115200bps
+};
+
+// ATGM336H save configuration command
+static const char*	atgm336h_savecommand = "$PCAS00*01\r\n";
+
+static void atgm336h_sendcommand(const char* cmd, size_t len)
+{
+    while (huart3.gState != HAL_UART_STATE_READY);
+    HAL_UART_Transmit_IT(&huart3, (const uint8_t*)cmd, len);
+    // wait for transfer completed
+    while (huart3.gState != HAL_UART_STATE_READY);
+}
+
+int	gps_configure_atgm336h(uint32_t baudrate)
+{
+    const char*	command = atgm336h_baudcommands[0];
+    switch (baudrate) {
+        case 9600:
+            command = atgm336h_baudcommands[0];
+            break;
+        case 19200:
+            command = atgm336h_baudcommands[1];
+            break;
+        case 38400:
+            command = atgm336h_baudcommands[2];
+            break;
+        case 57600:
+            command = atgm336h_baudcommands[3];
+            break;
+        case 115200:
+            command = atgm336h_baudcommands[4];
+            break;
+        default:
+            return -1;  // error
+    }
+
+    size_t len;
+
+    if (gps_is_atgm336h) {
+        len = strlen(command);
+        atgm336h_sendcommand(command, len);
+        len = strlen(atgm336h_savecommand);
+        atgm336h_sendcommand(atgm336h_savecommand, len);
+    }
+
+    return	0;
+}
+
 void gps_reconfigure_uart(uint32_t baudrate)
 {
+    HAL_UART_DeInit(&huart2);
     HAL_UART_DeInit(&huart3);
     // Wait for buffers to be consumed
     HAL_Delay(50);
+
+    huart2.Instance = USART2;
+    huart2.Init.BaudRate = baudrate;
+    huart2.Init.WordLength = UART_WORDLENGTH_8B;
+    huart2.Init.StopBits = UART_STOPBITS_1;
+    huart2.Init.Parity = UART_PARITY_NONE;
+    huart2.Init.Mode = UART_MODE_TX_RX;
+    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(&huart2) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
     huart3.Instance = USART3;
     huart3.Init.BaudRate = baudrate;
     huart3.Init.WordLength = UART_WORDLENGTH_8B;
@@ -104,9 +177,10 @@ void gps_reconfigure_uart(uint32_t baudrate)
     {
       Error_Handler();
     }
-    // Wait Uart to init
+    // Wait Uarts to init
     HAL_Delay(50);
     gps_start_gps_rx();
+    gps_start_comm_rx();
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
@@ -138,8 +212,17 @@ void gps_parse(char* line)
 
         pch = strtok(NULL, ","); // Time
 
-        gps_time[0] = pch[0];
-        gps_time[1] = pch[1];
+        if (!gps_time_offset) {
+	        gps_time[0] = pch[0];
+	        gps_time[1] = pch[1];
+		} else {
+			char p0 = pch[0] - '0';
+			char p1 = pch[1] - '0';
+			int hour = p0 * 10 + p1;
+			hour = (hour + (int)gps_time_offset) % 24;
+	        gps_time[0] = (char)((hour / 10) + '0');
+	        gps_time[1] = (char)((hour % 10) + '0');
+		}
         gps_time[2] = ':';
         gps_time[3] = pch[2];
         gps_time[4] = pch[3];
@@ -210,11 +293,16 @@ void gps_parse(char* line)
         // strtok(NULL, ","); // Unit
 
         gga_frames++;
+    } else 
+    if (strstr(line, "TXT") == line+3) {
+        if (strstr(line, "AT6558F-5N")) {
+            // this is ATGM336H module
+            gps_is_atgm336h = true;
+        }
     }
 }
 
-// Small risk of overrun here...
-#define SEND_BUFFER_SIZE 128
+#define	SEND_BUFFER_SIZE	FIFO_BUFFER_SIZE
 uint8_t send_buf[SEND_BUFFER_SIZE];
 uint8_t gps_send_buf[SEND_BUFFER_SIZE];
 uint8_t comm_send_buf[SEND_BUFFER_SIZE];
