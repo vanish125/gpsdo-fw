@@ -68,7 +68,7 @@ void lcd_create_chars()
 
 typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
-typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
+typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_EXIT, SCREEN_PPS_MAX } menu_pps_screen;
 
@@ -187,6 +187,7 @@ void menu_set_gps_baudrate(uint32_t baudrate)
     {   // Baudrate changed
         gps_baudrate = baudrate;
         gps_baudrate_enum = menu_get_baudrate_enum(baudrate);
+        gps_configure_module_uart(gps_baudrate);
         gps_reconfigure_uart(gps_baudrate);
     }
 }
@@ -574,9 +575,37 @@ static void menu_draw()
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_GPS_TIME_OFFSET:
-                    LCD_Puts(1, 0, menu_level == 1 ? "TZ-ofs:":"TZ-ofs?");
+                    LCD_Puts(1, 0, menu_level == 1 ? "TZ ofs:":"TZ ofs?");
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%2d", (int)gps_time_offset);
                     LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_GPS_MODEL:
+                    LCD_Puts(1, 0, "Model:");
+                    switch(gps_model)
+                    {
+                        case GPS_MODEL_ATGM336H:
+                            LCD_Puts(0, 1, "ATGM336H");
+                            break;
+                        case GPS_MODEL_NEO6M:
+                            LCD_Puts(0, 1, "NEO-6M");
+                            break;
+                        case GPS_MODEL_NEOM9N:
+                            LCD_Puts(0, 1, "NEO-M9N");
+                            break;
+                        default:
+                        case GPS_MODEL_UNKNOWN:
+                            LCD_Puts(0, 1, "Unknown");
+                            break;
+                    }
+                    break;
+                case SCREEN_GPS_LAST_FRAME:
+                    LCD_Puts(1, 0, "Frame:");
+                    LCD_Puts(0, 1, gps_last_frame);
+                    if(gps_last_frame_changed)
+                    {
+                        menu_force_redraw();
+                        gps_last_frame_changed = false;
+                    }
                     break;
                 case SCREEN_GPS_EXIT:
                     LCD_Puts(1, 0, "Exit?");
@@ -865,8 +894,13 @@ void menu_run()
                     // Update baudrate
                     {
                     baudrate max_baudrate = BAUDRATE_MAX;
-                    if (gps_is_atgm336h) {
-                        max_baudrate = BAUDRATE_115200 + 1;
+                    switch (gps_model)
+                    {
+                        case GPS_MODEL_ATGM336H:
+                            max_baudrate = BAUDRATE_115200 + 1;
+                            break;
+                        default:
+                            break;
                     }
                     gps_baudrate_enum =  (gps_baudrate_enum + encoder_increment) % max_baudrate;
                     if(gps_baudrate_enum >= max_baudrate) gps_baudrate_enum = max_baudrate-1; // Roll over for first sceen - 1
@@ -1113,7 +1147,7 @@ void menu_run()
                         ee_storage.gps_baudrate = gps_baudrate;
                         EE_Write();
                         // Reconfigure uart
-                        gps_configure_atgm336h(gps_baudrate);
+                        gps_configure_module_uart(gps_baudrate);
                         gps_reconfigure_uart(gps_baudrate);
                     }
                     break;

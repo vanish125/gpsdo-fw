@@ -20,10 +20,12 @@ char     gps_e_w[2]       = { '\0' };
 double   gps_msl_altitude;
 double   gps_geoid_separation;
 char     gps_hdop[9]      = { '\0' };
+char     gps_last_frame[9]= { '\0' };
+bool     gps_last_frame_changed = false;
 uint8_t  num_sats         = 0;
 uint32_t gga_frames       = 0;
 size_t   gps_line_len     = 0;
-bool     gps_is_atgm336h  = false;
+gps_model_type gps_model  = GPS_MODEL_UNKNOWN;
 
 
 
@@ -99,10 +101,7 @@ static const char*	atgm336h_baudcommands[] = {
     "$PCAS01,5*19\r\n"      // 115200bps
 };
 
-// ATGM336H save configuration command
-static const char*	atgm336h_savecommand = "$PCAS00*01\r\n";
-
-static void atgm336h_sendcommand(const char* cmd, size_t len)
+static void gps_sendcommand(const char* cmd, size_t len)
 {
     while (huart3.gState != HAL_UART_STATE_READY);
     HAL_UART_Transmit_IT(&huart3, (const uint8_t*)cmd, len);
@@ -110,36 +109,44 @@ static void atgm336h_sendcommand(const char* cmd, size_t len)
     while (huart3.gState != HAL_UART_STATE_READY);
 }
 
-int	gps_configure_atgm336h(uint32_t baudrate)
+int	gps_configure_module_uart(uint32_t baudrate)
 {
-    const char*	command = atgm336h_baudcommands[0];
-    switch (baudrate) {
-        case 9600:
-            command = atgm336h_baudcommands[0];
+    const char*	command = NULL;
+    switch(gps_model)
+    {
+        case GPS_MODEL_ATGM336H:
+            switch (baudrate) {
+                case 9600:
+                    command = atgm336h_baudcommands[0];
+                    break;
+                case 19200:
+                    command = atgm336h_baudcommands[1];
+                    break;
+                case 38400:
+                    command = atgm336h_baudcommands[2];
+                    break;
+                case 57600:
+                    command = atgm336h_baudcommands[3];
+                    break;
+                case 115200:
+                    command = atgm336h_baudcommands[4];
+                    break;
+                default:
+                    return -1;  // error
+            }
             break;
-        case 19200:
-            command = atgm336h_baudcommands[1];
+        case GPS_MODEL_NEO6M:
+            // TODO
+        case GPS_MODEL_NEOM9N:
+            // TODO
+        case GPS_MODEL_UNKNOWN:
             break;
-        case 38400:
-            command = atgm336h_baudcommands[2];
-            break;
-        case 57600:
-            command = atgm336h_baudcommands[3];
-            break;
-        case 115200:
-            command = atgm336h_baudcommands[4];
-            break;
-        default:
-            return -1;  // error
     }
 
     size_t len;
-
-    if (gps_is_atgm336h) {
+    if (command != NULL) {
         len = strlen(command);
-        atgm336h_sendcommand(command, len);
-        len = strlen(atgm336h_savecommand);
-        atgm336h_sendcommand(atgm336h_savecommand, len);
+        gps_sendcommand(command, len);
     }
 
     return	0;
@@ -212,7 +219,7 @@ void gps_parse(char* line)
 
         pch = strtok(NULL, ","); // Time
 
-        if (!gps_time_offset) {
+        if (gps_time_offset == 0) {
 	        gps_time[0] = pch[0];
 	        gps_time[1] = pch[1];
 		} else {
@@ -293,12 +300,26 @@ void gps_parse(char* line)
         // strtok(NULL, ","); // Unit
 
         gga_frames++;
-    } else 
-    if (strstr(line, "TXT") == line+3) {
+    } 
+    else if (strstr(line, "TXT") == line+3) {
         if (strstr(line, "AT6558F-5N")) {
             // this is ATGM336H module
-            gps_is_atgm336h = true;
+            gps_model = GPS_MODEL_ATGM336H;
         }
+        else if(strstr(line, "HW UBX-G"))
+        {
+            gps_model = GPS_MODEL_NEO6M;
+        }
+        else if(strstr(line, "HW UBX 9"))
+        {
+            gps_model = GPS_MODEL_NEOM9N;
+        }
+    }
+    // Store last received frame for debug purpose
+    if(strlen(line)>(sizeof(gps_last_frame)+3))
+    {
+        strncpy(gps_last_frame,line+3,sizeof(gps_last_frame)-1);
+        gps_last_frame_changed = true;
     }
 }
 

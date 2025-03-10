@@ -14,16 +14,19 @@ extern char     gps_e_w[];
 extern double   gps_msl_altitude;
 extern double   gps_geoid_separation;
 extern char     gps_hdop[];
+extern char     gps_last_frame[];
+extern bool     gps_last_frame_changed;
 extern uint8_t  num_sats;
 extern uint32_t gga_frames;
-extern bool     gps_is_atgm336h;
+typedef enum { GPS_MODEL_ATGM336H,  GPS_MODEL_NEO6M, GPS_MODEL_NEOM9N, GPS_MODEL_UNKNOWN } gps_model_type;
+extern gps_model_type gps_model;
 extern uint8_t  gps_time_offset;
 
 void gps_start_it();
 void gps_parse(char* line);
 void gps_read();
 
-int	 gps_configure_atgm336h(uint32_t baudrate);
+int	 gps_configure_module_uart(uint32_t baudrate);
 void gps_reconfigure_uart(uint32_t baudrate);
 
 #endif

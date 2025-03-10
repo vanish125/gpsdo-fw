@@ -13,8 +13,8 @@
 #include <string.h>
 
 /// All times in ms
-#define PPS_PULSE_WIDTH 100
-#define VCO_ADJUSTMENT_DELAY 3000
+#define PPS_PULSE_WIDTH         100
+#define VCO_ADJUSTMENT_DELAY    3000
 
 void warmup()
 {
@@ -98,18 +98,19 @@ void gpsdo(void)
     if (ee_storage.gps_baudrate == 0xffffffff) {
         ee_storage.gps_baudrate = GPS_DEFAULT_BAUDRATE;
     }
-    menu_set_gps_baudrate(ee_storage.gps_baudrate);
     if (ee_storage.gps_time_offset == 0xffffffff) {
         ee_storage.gps_time_offset = 0;
     }
     gps_time_offset = ee_storage.gps_time_offset;
 
+    gps_start_it();
+
+    menu_set_gps_baudrate(ee_storage.gps_baudrate);
+
     LCD_Init();
 
     lcd_create_chars();
     init_trend_values();
-
-    gps_start_it();
 
     // warmup();
 
@@ -121,6 +122,8 @@ void gpsdo(void)
     HAL_TIM_Base_Start(&htim3);
     HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
 
+    bool vco_adjust_allowed = false;
+
     while (1) {
         uint32_t now = HAL_GetTick();
         if(pps_out_up && now-last_pps_out >= PPS_PULSE_WIDTH)
@@ -128,11 +131,12 @@ void gpsdo(void)
             HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 0);
             pps_out_up = false;
         }
-        if (now >= VCO_ADJUSTMENT_DELAY) {
-            // Start adjusting the VCO after some time
+        if (!vco_adjust_allowed && now >= VCO_ADJUSTMENT_DELAY) 
+        {   // Start adjusting the VCO after some time
             frequency_allow_adjustment(true);
+            vco_adjust_allowed = true;
         }
-
+        
         gps_read();
         menu_run();
     }
