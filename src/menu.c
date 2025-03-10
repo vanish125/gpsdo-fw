@@ -66,7 +66,7 @@ void lcd_create_chars()
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_MAIN, SCREEN_DATE, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
@@ -381,6 +381,13 @@ static void menu_draw()
         snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d %s", num_sats, ppb_string);
         LCD_Puts(1, 0, screen_buffer);
         LCD_Puts(0, 1, gps_time);
+        break;
+    case SCREEN_DATE:
+        // Main screen with satellites, ppb and UTC time
+        menu_format_ppb(ppb_string,frequency_get_ppb());
+        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d %s", num_sats, ppb_string);
+        LCD_Puts(1, 0, screen_buffer);
+        LCD_Puts(0, 1, gps_date);
         break;
     case SCREEN_TREND:
         // Trend screen 
@@ -988,7 +995,7 @@ void menu_run()
                     {
                         case SCREEN_TREND_AUTO_H:
                         case SCREEN_TREND_AUTO_V:
-                        case SCREEN_MAIN:
+                        case SCREEN_TREND_MAIN:
                             menu_level = 2;
                             break;
                         case SCREEN_TREND_V_SCALE:
@@ -1289,6 +1296,7 @@ void menu_run()
             switch (current_menu_screen)
             {
                 case SCREEN_MAIN:
+                case SCREEN_DATE:
                 case SCREEN_TREND:
                     if(ee_storage.boot_menu != current_menu_screen)
                     {

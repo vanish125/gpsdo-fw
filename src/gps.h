@@ -7,6 +7,7 @@
 #define GPS_DEFAULT_BAUDRATE    9600
 
 extern char     gps_time[];
+extern char     gps_date[];
 extern char     gps_latitude[];
 extern char     gps_longitude[];
 extern char     gps_n_s[];
