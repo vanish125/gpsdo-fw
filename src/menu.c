@@ -66,7 +66,7 @@ void lcd_create_chars()
     }
 }
 
-typedef enum { SCREEN_MAIN, SCREEN_DATE, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
+typedef enum { SCREEN_MAIN, SCREEN_DATE, SCREEN_DATE_TIME, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
@@ -108,6 +108,9 @@ uint32_t    gps_baudrate = GPS_DEFAULT_BAUDRATE;
 baudrate    gps_baudrate_enum = BAUDRATE_9600;
 
 uint8_t     gps_time_offset = 0;	// 0-23
+
+#define     DATE_TIME_DURATION  5
+uint8_t     date_time_count = 0;
 
 uint32_t menu_get_baudrate_value(baudrate baudrate_enum)
 {
@@ -376,18 +379,36 @@ static void menu_draw()
     switch (current_menu_screen) {
     default:
     case SCREEN_MAIN:
-        // Main screen with satellites, ppb and UTC time
-        menu_format_ppb(ppb_string,frequency_get_ppb());
-        snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d %s", num_sats, ppb_string);
-        LCD_Puts(1, 0, screen_buffer);
-        LCD_Puts(0, 1, gps_time);
-        break;
     case SCREEN_DATE:
+    case SCREEN_DATE_TIME:
         // Main screen with satellites, ppb and UTC time
         menu_format_ppb(ppb_string,frequency_get_ppb());
         snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%02d %s", num_sats, ppb_string);
         LCD_Puts(1, 0, screen_buffer);
-        LCD_Puts(0, 1, gps_date);
+        if(current_menu_screen == SCREEN_MAIN)
+        {
+            LCD_Puts(0, 1, gps_time);
+        }
+        else if(current_menu_screen == SCREEN_DATE)
+        {
+            LCD_Puts(0, 1, gps_date);
+        }
+        else // SCREEN_DATE_TIME
+        {
+            if(date_time_count < DATE_TIME_DURATION)
+            {
+                LCD_Puts(0, 1, gps_time);
+            }
+            else
+            {
+                LCD_Puts(0, 1, gps_date);
+            }
+            date_time_count++;
+            if(date_time_count >= 2*DATE_TIME_DURATION)
+            {
+                date_time_count = 0;
+            }
+        }
         break;
     case SCREEN_TREND:
         // Trend screen 
@@ -524,7 +545,7 @@ static void menu_draw()
     case SCREEN_GPS:
         if(menu_level == 0)
         {
-            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "GPS:%02d\4", num_sats);
+            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "GPS:%02d\3", num_sats);
             LCD_Puts(1, 0, screen_buffer);
             LCD_Puts(0, 1, gps_time);
         }
@@ -739,6 +760,8 @@ void menu_run()
             {
                 last_menu_change = HAL_GetTick();
             }
+            // Reset counter for date/time screen
+            date_time_count = 0;
             LCD_Clear();
             menu_force_redraw();
         }
@@ -1297,6 +1320,7 @@ void menu_run()
             {
                 case SCREEN_MAIN:
                 case SCREEN_DATE:
+                case SCREEN_DATE_TIME:
                 case SCREEN_TREND:
                     if(ee_storage.boot_menu != current_menu_screen)
                     {
