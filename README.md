@@ -18,6 +18,8 @@ This alternative firmware has a 2 level menu system. Moving from one menu item t
 
 Here is the menu tree :
 - `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
+- `Date Screen`: displays the number of detected satellites, the PPB value and the current UTC date (format `mm/dd/yy`) read from GPS frame
+- `Date-time Screen`: displays the number of detected satellites, the PPB value and the current UTC time or date (changes every 5 seconds)
 - `Trend Menu`: displays the number of detected satellites, the current PPB value and a graphical representation of the PPB trend over time
   - `Trend Main Screen`: same as above, press the encoder to enter navigation mode (scroll trend data over time by rotating the encoder)
   - `Auto vertical scale`: press to set the auto-vertical-scale status (when set to `ON`, vertical scale will be automatically adjusted to match the displayed trend values)
@@ -43,7 +45,10 @@ Here is the menu tree :
   - `Geoid`: the Geoid-to-ellipsoid separation (in meters)
   - `Sat. #`: the numner of satellites
   - `HDOP`: the current Horizontal Dilution Of Precision value
-  - `Baudrate`: set the GPS UART communication baudrate (only change this if you have replaced or reconfigured the GPS module of your GPSDO)
+  - `Baudrate`: set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly)
+  - `Time Zone offset`: set the number of hours (0-23) to shift the displayed time from UTC to match local time
+  - `Model`: displays the detected GPS module model
+  - `Frame`: displays to first characters of the last frame received from the GPS module
 - `Uptime Screen` : displays the number of seconds elapsed since last boot
 - `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
 - `Contrast Screen` : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
