@@ -18,7 +18,7 @@ This alternative firmware has a 2 level menu system. Moving from one menu item t
 
 Here is the menu tree :
 - `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
-- `Date Screen`: displays the number of detected satellites, the PPB value and the current UTC date (format `mm/dd/yy`) read from GPS frame
+- `Date Screen`: displays the number of detected satellites, the PPB value and the current UTC date read from GPS frame
 - `Date-time Screen`: displays the number of detected satellites, the PPB value and the current UTC time or date (changes every 5 seconds)
 - `Trend Menu`: displays the number of detected satellites, the current PPB value and a graphical representation of the PPB trend over time
   - `Trend Main Screen`: same as above, press the encoder to enter navigation mode (scroll trend data over time by rotating the encoder)
@@ -47,7 +47,8 @@ Here is the menu tree :
   - `HDOP`: the current Horizontal Dilution Of Precision value
   - `Baudrate`: set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly)
   - `Time Zone offset`: set the number of hours (0-23) to shift the displayed time from UTC to match local time
-  - `Model`: displays the detected GPS module model
+  - `Date Format`: set the date format (either `mm/dd/yy` (default value) or `dd/mm/yy`)
+  - `Model`: displays the detected GPS module model, press to manually set the GPS module model
   - `Frame`: displays to first characters of the last frame received from the GPS module
 - `Uptime Screen` : displays the number of seconds elapsed since last boot
 - `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
