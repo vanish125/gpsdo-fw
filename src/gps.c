@@ -316,11 +316,21 @@ void gps_parse(char* line)
         pch = strtok(NULL, ","); // Orientation
         pch = strtok(NULL, ","); // Date
 
-        gps_date[0] = pch[2];
-        gps_date[1] = pch[3];
+        if(gps_us_date_format)
+        {
+            gps_date[0] = pch[2];
+            gps_date[1] = pch[3];
+            gps_date[3] = pch[0];
+            gps_date[4] = pch[1];
+        }
+        else
+        {
+            gps_date[0] = pch[0];
+            gps_date[1] = pch[1];
+            gps_date[3] = pch[2];
+            gps_date[4] = pch[3];
+        }
         gps_date[2] = '/';
-        gps_date[3] = pch[0];
-        gps_date[4] = pch[1];
         gps_date[5] = '/';
         gps_date[6] = pch[4];
         gps_date[7] = pch[5];

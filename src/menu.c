@@ -68,7 +68,7 @@ void lcd_create_chars()
 
 typedef enum { SCREEN_MAIN, SCREEN_DATE, SCREEN_DATE_TIME, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
-typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
+typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_DATE_FORMAT, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_EXIT, SCREEN_PPS_MAX } menu_pps_screen;
 
@@ -108,6 +108,7 @@ uint32_t    gps_baudrate = GPS_DEFAULT_BAUDRATE;
 baudrate    gps_baudrate_enum = BAUDRATE_9600;
 
 uint8_t     gps_time_offset = 0;	// 0-23
+bool        gps_us_date_format = true;
 
 #define     DATE_TIME_DURATION  5
 uint8_t     date_time_count = 0;
@@ -607,6 +608,10 @@ static void menu_draw()
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%2d", (int)gps_time_offset);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
+                case SCREEN_GPS_DATE_FORMAT:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Dt Fmt:":"Dt fmt?");
+                    LCD_Puts(0, 1, gps_us_date_format ? "mm/dd/yy" : "dd/mm/yy");
+                    break;
                 case SCREEN_GPS_MODEL:
                     LCD_Puts(1, 0, "Model:");
                     switch(gps_model)
@@ -940,12 +945,18 @@ void menu_run()
                     }
                     break;
                 case SCREEN_GPS_TIME_OFFSET:
-                    // Update time offset
-                    {
+                    {   // Update time offset
                         gps_time_offset += encoder_increment;
                         if (gps_time_offset > 23) {
                             gps_time_offset = (encoder_increment > 0) ? 0 : 23;
                         }
+                        LCD_Clear();
+                        menu_force_redraw();
+                    }
+                    break;
+                case SCREEN_GPS_DATE_FORMAT:
+                    {   // Update date format
+                        gps_us_date_format = !gps_us_date_format;
                         LCD_Clear();
                         menu_force_redraw();
                     }
@@ -1071,15 +1082,14 @@ void menu_run()
                     switch(current_menu_gps_screen)
                     {
                         case SCREEN_GPS_BAUDRATE:
+                        case SCREEN_GPS_DATE_FORMAT:
+                        case SCREEN_GPS_TIME_OFFSET:
                             menu_level = 2;
                             break;
                         case SCREEN_GPS_EXIT:
                             // Go back to main screen to prevent returning to exit screen
                             current_menu_gps_screen = SCREEN_GPS_TIME;
                             menu_level = 0;
-                            break;
-                        case SCREEN_GPS_TIME_OFFSET:
-                            menu_level = 2;
                             break;
                         default:
                             menu_level = 0;
@@ -1185,6 +1195,13 @@ void menu_run()
                     if(ee_storage.gps_time_offset != gps_time_offset)
                     {   // Save changes
                         ee_storage.gps_time_offset = gps_time_offset;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_GPS_DATE_FORMAT:
+                    if(ee_storage.gps_us_date_format != gps_us_date_format)
+                    {   // Save changes
+                        ee_storage.gps_us_date_format = gps_us_date_format;
                         EE_Write();
                     }
                     break;
