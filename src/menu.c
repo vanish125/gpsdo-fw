@@ -18,7 +18,7 @@
 #define BOOT_MENU_SAVE_TIME     3*1000
 
 // Firmware version tag
-#define FIRMWARE_VERSION        "v0.1.8"
+#define FIRMWARE_VERSION        "v0.1.9"
 
 volatile uint32_t rotary_down_time      = 0;
 volatile uint32_t rotary_up_time        = 0;
@@ -613,7 +613,7 @@ static void menu_draw()
                     LCD_Puts(0, 1, gps_us_date_format ? "mm/dd/yy" : "dd/mm/yy");
                     break;
                 case SCREEN_GPS_MODEL:
-                    LCD_Puts(1, 0, "Model:");
+                    LCD_Puts(1, 0, menu_level == 1 ? "Model:":"Model?");
                     switch(gps_model)
                     {
                         case GPS_MODEL_ATGM336H:
@@ -627,7 +627,7 @@ static void menu_draw()
                             break;
                         default:
                         case GPS_MODEL_UNKNOWN:
-                            LCD_Puts(0, 1, "Unknown");
+                            LCD_Puts(0, 1, menu_level == 1 ? "Unknown":"Auto");
                             break;
                     }
                     break;
@@ -926,8 +926,7 @@ void menu_run()
             switch(current_menu_gps_screen)
             {
                 case SCREEN_GPS_BAUDRATE:
-                    // Update baudrate
-                    {
+                    { // Update baudrate
                     baudrate max_baudrate = BAUDRATE_MAX;
                     switch (gps_model)
                     {
@@ -959,6 +958,14 @@ void menu_run()
                         gps_us_date_format = !gps_us_date_format;
                         LCD_Clear();
                         menu_force_redraw();
+                    }
+                    break;
+                case SCREEN_GPS_MODEL:
+                    { // Update model
+                    gps_model =  (gps_model + encoder_increment) % (GPS_MODEL_UNKNOWN+1);
+                    if(gps_model > GPS_MODEL_UNKNOWN) gps_model = GPS_MODEL_UNKNOWN; // Roll over for first sceen - 1
+                    LCD_Clear();
+                    menu_force_redraw();
                     }
                     break;
                 default:
@@ -1081,9 +1088,10 @@ void menu_run()
                 case SCREEN_GPS:
                     switch(current_menu_gps_screen)
                     {
-                        case SCREEN_GPS_BAUDRATE:
+                        case SCREEN_GPS_MODEL:
                         case SCREEN_GPS_DATE_FORMAT:
                         case SCREEN_GPS_TIME_OFFSET:
+                        case SCREEN_GPS_BAUDRATE:
                             menu_level = 2;
                             break;
                         case SCREEN_GPS_EXIT:
@@ -1202,6 +1210,13 @@ void menu_run()
                     if(ee_storage.gps_us_date_format != gps_us_date_format)
                     {   // Save changes
                         ee_storage.gps_us_date_format = gps_us_date_format;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_GPS_MODEL:
+                    if(ee_storage.gps_model != gps_model)
+                    {   // Save changes
+                        ee_storage.gps_model = gps_model;
                         EE_Write();
                     }
                     break;

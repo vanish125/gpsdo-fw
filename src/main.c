@@ -106,6 +106,10 @@ void gpsdo(void)
         ee_storage.gps_us_date_format = true;
     }
     gps_us_date_format = ee_storage.gps_us_date_format;
+    if (ee_storage.gps_model == 0xff) {
+        ee_storage.gps_model = GPS_MODEL_UNKNOWN;
+    }
+    gps_model = ee_storage.gps_model;
 
     gps_start_it();
 

@@ -336,7 +336,7 @@ void gps_parse(char* line)
         gps_date[7] = pch[5];
         gps_date[8] = '\0';
     } 
-    else if (strstr(line, "TXT") == line+3) 
+    else if ((gps_model == GPS_MODEL_UNKNOWN) && strstr(line, "TXT") == line+3) 
     {
         if (strstr(line, "AT6558F-5N")) {
             // this is ATGM336H module
