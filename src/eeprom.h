@@ -23,6 +23,7 @@ typedef struct
     int32_t  gps_time_offset;
     uint8_t  gps_us_date_format;
     uint8_t  gps_model;
+    uint32_t ppb_lock_threshold;
 } ee_storage_t;
 
 extern ee_storage_t ee_storage;

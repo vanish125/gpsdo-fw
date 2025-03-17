@@ -53,23 +53,29 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
-uint8_t lcd_backslash[][8] = { { 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b10000, 0b00000, 0b00000 },
-                               { 0b00000, 0b00000, 0b00000, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
-                               { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
-                               { 0b00000, 0b11101, 0b00010, 0b11001, 0b01101, 0b10101, 0b00000, 0b00000 },
-                             };
+uint8_t sat_icons[][8] =        {   { 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b10000, 0b00000, 0b00000 },
+                                    { 0b00000, 0b00000, 0b00000, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
+                                    { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
+                                    { 0b00000, 0b11101, 0b00010, 0b11001, 0b01101, 0b10101, 0b00000, 0b00000 },
+                                };
+
+uint8_t sat_icons_lock[][8] =   {   { 0b00010, 0b00111, 0b00111, 0b00000, 0b00000, 0b10000, 0b00000, 0b00000 },
+                                    { 0b00010, 0b00111, 0b00111, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
+                                    { 0b00010, 0b11111, 0b00111, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
+                                    { 0b00000, 0b11101, 0b00010, 0b11001, 0b01101, 0b10101, 0b00000, 0b00000 },
+                                };
 
 void lcd_create_chars()
 {
     for (int i = 0; i < 4; i++) {
-        LCD_CreateChar(i+1, lcd_backslash[i]);
+        LCD_CreateChar(i+1, ppb_lock_status ? sat_icons_lock[i] : sat_icons[i]);
     }
 }
 
 typedef enum { SCREEN_MAIN, SCREEN_DATE, SCREEN_DATE_TIME, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_DATE_FORMAT, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
-typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
+typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_LOCK_THRESHOLD, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_EXIT, SCREEN_PPS_MAX } menu_pps_screen;
 
 // Possible baudrate values
@@ -113,6 +119,8 @@ bool        gps_us_date_format = true;
 
 #define     DATE_TIME_DURATION  5
 uint8_t     date_time_count = 0;
+
+uint32_t    ppb_lock_threshold = DEFAULT_PPB_LOCK_THRESHOLD;
 
 uint32_t menu_get_baudrate_value(baudrate baudrate_enum)
 {
@@ -278,7 +286,7 @@ static void add_trend_value(uint32_t value)
     }
 }
 
-static uint32_t menu_roud_v_scale(uint32_t scale)
+static uint32_t menu_round_v_scale(uint32_t scale)
 {
     uint32_t rounded_scale;
     if(scale < 70)
@@ -332,7 +340,7 @@ static void menu_draw_trend(uint32_t shift)
     // Vertical auto-scale
     if(trend_auto_v)
     {   // Determine scale, to fit the screen
-        trend_v_scale = menu_roud_v_scale(get_trend_peak_value(shift));
+        trend_v_scale = menu_round_v_scale(get_trend_peak_value(shift));
     }
     for(int col_screen = 0 ; col_screen < 8 ; col_screen++)
     {
@@ -529,6 +537,11 @@ static void menu_draw()
                 case SCREEN_PPB_AUTO_SYNC_PPS:
                     LCD_Puts(1, 0, menu_level == 1 ? "PPS S.:":"PPS S.?");
                     LCD_Puts(0, 1, pps_ppm_auto_sync ? "      ON" : "     OFF");
+                    break;
+                case SCREEN_PPB_LOCK_THRESHOLD:
+                    LCD_Puts(1, 0, menu_level == 1 ? "PPB Lk:":"PPB Lk?");
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%02ld", ppb_lock_threshold / 100, ppb_lock_threshold % 100);
+                    LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_EXIT:
                     LCD_Puts(1, 0, "Exit?");
@@ -886,7 +899,7 @@ void menu_run()
                         multiplier = 10;
                     }
                     trend_v_scale += (multiplier*encoder_increment);
-                    trend_v_scale = menu_roud_v_scale(trend_v_scale);
+                    trend_v_scale = menu_round_v_scale(trend_v_scale);
                     LCD_Clear();
                     menu_force_redraw();
                     break;
@@ -915,6 +928,21 @@ void menu_run()
                 case SCREEN_PPB_AUTO_SYNC_PPS:
                     // Update mode
                     pps_ppm_auto_sync = !pps_ppm_auto_sync;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    break;
+                case SCREEN_PPB_LOCK_THRESHOLD:
+                    // Update ppb lock threshold
+                    int new_threshold = ppb_lock_threshold + (5*encoder_increment);
+                    if(new_threshold < 0)
+                    {
+                        new_threshold = 0;
+                    }
+                    else if(new_threshold > MAX_PPB_LOCK_THRESHOLD)
+                    {
+                        new_threshold = MAX_PPB_LOCK_THRESHOLD;
+                    }
+                    ppb_lock_threshold = new_threshold;
                     LCD_Clear();
                     menu_force_redraw();
                     break;
@@ -1079,6 +1107,7 @@ void menu_run()
                     {
                         case SCREEN_PPB_AUTO_SAVE_PWM:
                         case SCREEN_PPB_AUTO_SYNC_PPS:
+                        case SCREEN_PPB_LOCK_THRESHOLD:
                             menu_level = 2;
                             break;
                         case SCREEN_PPB_EXIT:
@@ -1184,6 +1213,13 @@ void menu_run()
                     if(ee_storage.pps_ppm_auto_sync != pps_ppm_auto_sync)
                     {   // Save changes
                         ee_storage.pps_ppm_auto_sync = pps_ppm_auto_sync;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_PPB_LOCK_THRESHOLD:
+                    if(ee_storage.ppb_lock_threshold != ppb_lock_threshold)
+                    {   // Save changes
+                        ee_storage.ppb_lock_threshold = ppb_lock_threshold;
                         EE_Write();
                     }
                     break;
@@ -1314,7 +1350,7 @@ void menu_run()
         }
 
         // Check if we need resync or PWM save
-        if(frequency_is_stable())
+        if(frequency_is_stable(0))
         {   // Frequency is stabilized
             // Save PWM if requested
             bool did_pwm = false;
@@ -1349,6 +1385,12 @@ void menu_run()
                 LCD_Puts(0, 0, "  PWM  ");
                 LCD_Puts(0, 1, "SAVED !");
             }
+        }
+        if(ppb_lock_status != frequency_is_stable(ppb_lock_threshold))
+        {   // Update PPB lock status
+            ppb_lock_status = !ppb_lock_status;
+            HAL_GPIO_WritePin(PPB_LOCK_OUTPUT_GPIO_Port, PPB_LOCK_OUTPUT_Pin, !ppb_lock_status); // Active low
+            lcd_create_chars();
         }
 
         // Check if boot menu has to be changed

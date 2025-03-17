@@ -110,6 +110,12 @@ void gpsdo(void)
         ee_storage.gps_model = GPS_MODEL_UNKNOWN;
     }
     gps_model = ee_storage.gps_model;
+    // PPB lock threshold (*100)
+    if (ee_storage.ppb_lock_threshold == 0xffffffff) {
+        ee_storage.ppb_lock_threshold = DEFAULT_PPB_LOCK_THRESHOLD;
+    }
+    ppb_lock_threshold = ee_storage.ppb_lock_threshold;
+
 
     gps_start_it();
 

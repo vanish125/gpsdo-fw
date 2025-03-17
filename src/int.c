@@ -40,6 +40,9 @@ volatile bool     sync_pps_out     = false;
 volatile bool     pps_ppm_auto_sync= false;
 volatile bool     pwm_auto_save    = false;
 volatile bool     update_trend     = false;
+// Lock outputs
+volatile bool     gps_lock_status  = false;
+volatile bool     ppb_lock_status  = false;
 
 const char spinner[]   = "\1\2\3";
 uint8_t    pps_spinner = 0;
@@ -68,6 +71,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
             current_state_icon = blink_toggle ? NO_SAT_ICON_CODE : ' ';
             blink_toggle = !blink_toggle;
             refresh_screen = true;
+            if(gps_lock_status)
+            {   // GPS lock lost => update status
+                gps_lock_status = false;
+                HAL_GPIO_WritePin(GPS_LOCK_OUTPUT_GPIO_Port, GPS_LOCK_OUTPUT_Pin, 1);
+            }
         }
     }
 }
@@ -150,6 +158,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
         pps_spinner   = (pps_spinner + 1) % strlen(spinner);
         refresh_screen = true;
         update_trend = true;
+        if(!gps_lock_status)
+        {   // Update GPS lock status
+            gps_lock_status = true;
+            HAL_GPIO_WritePin(GPS_LOCK_OUTPUT_GPIO_Port, GPS_LOCK_OUTPUT_Pin, 0);
+        }
     }
 }
 
