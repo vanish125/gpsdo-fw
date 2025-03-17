@@ -20,7 +20,7 @@ typedef struct
     uint32_t trend_h_scale;
     uint8_t  boot_menu;
     uint32_t gps_baudrate;
-    int32_t  gps_time_offset;
+    uint32_t gps_time_offset;
     uint8_t  gps_us_date_format;
     uint8_t  gps_model;
     uint32_t ppb_lock_threshold;

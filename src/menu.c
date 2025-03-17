@@ -1245,9 +1245,9 @@ void menu_run()
                     }
                     break;
                 case SCREEN_GPS_TIME_OFFSET:
-                    if(ee_storage.gps_time_offset != gps_time_offset)
+                    if(ee_storage.gps_time_offset != (gps_time_offset-MIN_TIME_OFFSET))
                     {   // Save changes
-                        ee_storage.gps_time_offset = gps_time_offset;
+                        ee_storage.gps_time_offset = gps_time_offset-MIN_TIME_OFFSET;
                         EE_Write();
                     }
                     break;
