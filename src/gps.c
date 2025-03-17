@@ -358,9 +358,9 @@ void gps_parse(char* line)
                 int year  = y0 * 10 + y1;
                 day += gps_day_offset;
                 // Quick and dirty poor man's gregorian calendar handling
-                // Leap year is not handled
-                if(day > 28 && month == 2)
-                {   // Case of february (leap year not handled)
+                bool is_leap_year = ((year % 4) == 0);
+                if((day > (is_leap_year ? 29 : 28)) && month == 2)
+                {   // Case of february
                     day = 1;
                     month = 3;
                 }
@@ -389,8 +389,8 @@ void gps_parse(char* line)
                         year--;
                     }
                     else if(month == 3)
-                    {   // Case of february, leap year not handled
-                        day = 28;
+                    {   // Case of february
+                        day = is_leap_year ? 29 : 28;
                         month--;
                     }
                     else if(month == 2 || month == 4 || month == 6 ||month == 8 || month == 9 || month == 11)
