@@ -37,6 +37,7 @@ Here is the menu tree :
   - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
   - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
   - `PPB Lock Threshold`: press to set the PPB threshold value above which PPB is considered locked
+  - `Exit`: press to exit the PPB sub-menu
 - `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
 - `GPS Menu`: displays the number of detected satellites and the current GPS time
   - `Time`: the current GPS time
@@ -51,6 +52,7 @@ Here is the menu tree :
   - `Date Format`: set the date format (either `mm/dd/yy` (default value) or `dd/mm/yy`)
   - `Model`: displays the detected GPS module model, press to manually set the GPS module model
   - `Frame`: displays to first characters of the last frame received from the GPS module
+  - `Exit`: press to exit the GPS sub-menu
 - `Uptime Screen` : displays the number of seconds elapsed since last boot
 - `GGA Frames Screen`: the number of GGA frames received from the GPS module since last boot
 - `Contrast Screen` : press the encoder to change the contrast value by turning the rotary encoder ; press again to exit (when editing contrast value, `?` is displayed after contrast)
@@ -62,6 +64,7 @@ Here is the menu tree :
   - `Delay`: press to set the MCU PPS output synchronisation delay (in seconds)
   - `Threshold`: press to set the MCU PPS output synchronisation threshold (in clock cycles)
   - `Force Sync`: press to force the MCU Controlled PPS output to be synched with the GPS PPS output
+  - `Exit`: press to exit the PPS sub-menu
 - `Version Screen` : shows the current firmware version
 
 #### Main screen
