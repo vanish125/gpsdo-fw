@@ -57,17 +57,19 @@ uint8_t sat_icons[][8] =        {   { 0b00000, 0b00000, 0b00000, 0b00000, 0b0000
                                     { 0b00000, 0b00000, 0b00000, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
                                     { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
                                     { 0b00000, 0b11101, 0b00010, 0b11001, 0b01101, 0b10101, 0b00000, 0b00000 },
+                                    { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
                                 };
 
 uint8_t sat_icons_lock[][8] =   {   { 0b00010, 0b00111, 0b00111, 0b00000, 0b00000, 0b10000, 0b00000, 0b00000 },
                                     { 0b00010, 0b00111, 0b00111, 0b11000, 0b00100, 0b10100, 0b00000, 0b00000 },
                                     { 0b00010, 0b11111, 0b00111, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
                                     { 0b00000, 0b11101, 0b00010, 0b11001, 0b01101, 0b10101, 0b00000, 0b00000 },
+                                    { 0b00000, 0b11100, 0b00010, 0b11001, 0b00101, 0b10101, 0b00000, 0b00000 },
                                 };
 
 void lcd_create_chars()
 {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         LCD_CreateChar(i+1, ppb_lock_status ? sat_icons_lock[i] : sat_icons[i]);
     }
 }
@@ -560,7 +562,7 @@ static void menu_draw()
     case SCREEN_GPS:
         if(menu_level == 0)
         {
-            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "GPS:%02d\3", num_sats);
+            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "GPS:%02d\5", num_sats);
             LCD_Puts(1, 0, screen_buffer);
             LCD_Puts(0, 1, gps_time);
         }
