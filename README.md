@@ -144,7 +144,9 @@ These two pins and ground can be routed to an external header on the backside of
 
 #### GPS Lock and GPSDO Lock Outputs
 
-Pins PA0 and PA1 can be used to drive leds showing GPS Lock and GPSDO Lock status. PA0 will be pulled low as soon as the GPS module is locked and PA1 will be pulled low when PPB mean value goes above the set threshold.
+Pins `PA0` and `PA1` can be used to drive leds showing GPS Lock and GPSDO Lock status.
+
+`PA0` will be pulled low as soon as the GPS module is locked and `PA1` will be pulled low when PPB mean value goes above the set threshold.
 
 ![GPS Lock and GPSDO Lock outputs](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-gpsdo-outputs.jpg?raw=true)
 
