@@ -87,7 +87,7 @@ After boot, the GPSDO will automatically display the last used screen between `M
 #### GPSDO lock
 GPSDO is considered locked when the mean PPB value (running average over 128 seconds) is above the `PPB Lock Threshold` setting in `PPB` menu.
 The GPSDO locked status can be monitored with the padlock icon on the main screen :
-![PPB Lock](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-lock.png?raw=true)
+![GPSDO Lock](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo-lock.png?raw=true)
 
 #### PPB Menu
 ![PPB Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-menu.png?raw=true)
@@ -148,7 +148,7 @@ Pins `PA0` and `PA1` can be used to drive leds showing GPS Lock and GPSDO Lock s
 
 `PA0` will be pulled low as soon as the GPS module is locked and `PA1` will be pulled low when PPB mean value goes above the set threshold.
 
-![GPS Lock and GPSDO Lock outputs](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-gpsdo-outputs.jpg?raw=true)
+![GPS Lock and GPSDO Lock outputs](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-gpsdo-lock-output.png?raw=true)
 
 ### Theory of operation
 
