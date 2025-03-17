@@ -87,7 +87,7 @@ After boot, the GPSDO will automatically display the last used screen between `M
 #### GPSDO Lock
 GPSDO is considered locked when the mean PPB value (running average over 128 seconds) is above the `PPB Lock Threshold` setting in `PPB` menu.
 
-The GPSDO locked status can be monitored with the padlock icon on the main screen :
+The GPSDO locked status can be monitored with the padlock icon on the main screen:
 ![GPSDO Lock](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo-lock.png?raw=true)
 
 #### PPB Menu
