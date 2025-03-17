@@ -36,7 +36,7 @@ Here is the menu tree :
   - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
   - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
   - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
-  - `PPB Lock Threshold`: press to set the PPB threshold value above which PPB is considered locked
+  - `PPB Lock Threshold`: press to set the PPB threshold value above which GPSDO is considered locked
   - `Exit`: press to exit the PPB sub-menu
 - `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
 - `GPS Menu`: displays the number of detected satellites and the current GPS time
@@ -84,9 +84,9 @@ Trend menu gives access to trend navigation, and scale settings:
 #### Boot Screen
 After boot, the GPSDO will automatically display the last used screen between `Main Scren` and `Trend Scren`.
 
-#### PPB lock
-PPB is considered lock when the mean PPB value (running average over 128 seconds) is above the `PPB Lock Threshold` setting in `PPB` menu.
-The PPB locked status can be monitored with the padlock icon in the main screen :
+#### GPSDO lock
+GPSDO is considered locked when the mean PPB value (running average over 128 seconds) is above the `PPB Lock Threshold` setting in `PPB` menu.
+The GPSDO locked status can be monitored with the padlock icon on the main screen :
 ![PPB Lock](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-lock.png?raw=true)
 
 #### PPB Menu
@@ -142,11 +142,11 @@ A GPS UART passthrough has been added on UART1: pins PA2 (TX) and PA3 (RX) can b
 
 These two pins and ground can be routed to an external header on the backside of the device, and then plugging in a serial to USB converter when needed.
 
-#### GPS Lock and PPB Lokc Outputs
+#### GPS Lock and GPSDO Lock Outputs
 
-Pins PA0 and PA1 can be used to drive leds showing GPS Lock and PPB Lock status. PA0 will be pulled low as soon as the GPS module is locked and PA1 will be pulled low when PPB mean value goes above the set threshold.
+Pins PA0 and PA1 can be used to drive leds showing GPS Lock and GPSDO Lock status. PA0 will be pulled low as soon as the GPS module is locked and PA1 will be pulled low when PPB mean value goes above the set threshold.
 
-![GPS Lock and PPB Lock outputs](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-ppb-outputs.jpg?raw=true)
+![GPS Lock and GPSDO Lock outputs](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-gpsdo-outputs.jpg?raw=true)
 
 ### Theory of operation
 
