@@ -68,5 +68,5 @@ int32_t frequency_get_ppb()
 
 bool frequency_is_stable(int32_t threshold)
 {
-    return ((num_samples == CIRCULAR_BUFFER_LEN) && (frequency_get_ppb() <= threshold));
+    return ((num_samples == CIRCULAR_BUFFER_LEN) && (abs(frequency_get_ppb()) <= threshold));
 }

@@ -28,7 +28,7 @@ extern volatile bool     pps_ppm_auto_sync;
 extern volatile bool     pwm_auto_save;
 extern volatile bool     update_trend;
 extern volatile bool     gps_lock_status;
-extern volatile bool     ppb_lock_status;
+extern          bool     ppb_lock_status;
 
 void update_contrast();
 

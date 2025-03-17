@@ -42,7 +42,7 @@ volatile bool     pwm_auto_save    = false;
 volatile bool     update_trend     = false;
 // Lock outputs
 volatile bool     gps_lock_status  = false;
-volatile bool     ppb_lock_status  = false;
+bool              ppb_lock_status  = false;
 
 const char spinner[]   = "\1\2\3";
 uint8_t    pps_spinner = 0;
