@@ -17,9 +17,9 @@ The [original manual](https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766e
 This alternative firmware has a 2 level menu system. Moving from one menu item to another is done by turning the rotary encoder, and entering a given menu (when applicable) is done by pressing the encoder.
 
 Here is the menu tree :
-- `Main Screen`: displays the number of detected satellites, the PPB value and the current UTC time read from GPS frame
-- `Date Screen`: displays the number of detected satellites, the PPB value and the current UTC date read from GPS frame
-- `Date-time Screen`: displays the number of detected satellites, the PPB value and the current UTC time or date (changes every 5 seconds)
+- `Main Screen`: displays the number of detected satellites, the PPB value and the current time read from GPS frame
+- `Date Screen`: displays the number of detected satellites, the PPB value and the current date read from GPS frame
+- `Date-time Screen`: displays the number of detected satellites, the PPB value and the current time or date (changes every 5 seconds)
 - `Trend Menu`: displays the number of detected satellites, the current PPB value and a graphical representation of the PPB trend over time
   - `Trend Main Screen`: same as above, press the encoder to enter navigation mode (scroll trend data over time by rotating the encoder)
   - `Auto vertical scale`: press to set the auto-vertical-scale status (when set to `ON`, vertical scale will be automatically adjusted to match the displayed trend values)
@@ -36,6 +36,7 @@ Here is the menu tree :
   - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
   - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
   - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
+  - `PPB Lock Threshold`: press to set the PPB threshold value above which PPB is considered locked
 - `PWM Screen`: the current PWM value, press the encoder twice to save this value to flash memory
 - `GPS Menu`: displays the number of detected satellites and the current GPS time
   - `Time`: the current GPS time
@@ -46,7 +47,7 @@ Here is the menu tree :
   - `Sat. #`: the numner of satellites
   - `HDOP`: the current Horizontal Dilution Of Precision value
   - `Baudrate`: set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly)
-  - `Time Zone offset`: set the number of hours (0-23) to shift the displayed time from UTC to match local time
+  - `Time Zone offset`: set the number of hours (-14/+14) to shift the displayed time from UTC to match local time
   - `Date Format`: set the date format (either `mm/dd/yy` (default value) or `dd/mm/yy`)
   - `Model`: displays the detected GPS module model, press to manually set the GPS module model
   - `Frame`: displays to first characters of the last frame received from the GPS module
@@ -79,6 +80,11 @@ Trend menu gives access to trend navigation, and scale settings:
 
 #### Boot Screen
 After boot, the GPSDO will automatically display the last used screen between `Main Scren` and `Trend Scren`.
+
+#### PPB lock
+PPB is considered lock when the mean PPB value (running average over 128 seconds) is above the `PPB Lock Threshold` setting in `PPB` menu.
+The PPB locked status can be monitored with the padlock icon in the main screen :
+![PPB Lock](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-lock.png?raw=true)
 
 #### PPB Menu
 ![PPB Menu](https://github.com/fredzo/gpsdo-fw/blob/main/doc/ppb-menu.png?raw=true)
@@ -132,6 +138,12 @@ A GPS UART passthrough has been added on UART1: pins PA2 (TX) and PA3 (RX) can b
 ![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-passthrough.jpg?raw=true)
 
 These two pins and ground can be routed to an external header on the backside of the device, and then plugging in a serial to USB converter when needed.
+
+#### GPS Lock and PPB Lokc Outputs
+
+Pins PA0 and PA1 can be used to drive leds showing GPS Lock and PPB Lock status. PA0 will be pulled low as soon as the GPS module is locked and PA1 will be pulled low when PPB mean value goes above the set threshold.
+
+![GPS Lock and PPB Lock outputs](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-ppb-outputs.jpg?raw=true)
 
 ### Theory of operation
 
