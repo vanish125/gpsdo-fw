@@ -84,8 +84,9 @@ Trend menu gives access to trend navigation, and scale settings:
 #### Boot Screen
 After boot, the GPSDO will automatically display the last used screen between `Main Scren` and `Trend Scren`.
 
-#### GPSDO lock
+#### GPSDO Lock
 GPSDO is considered locked when the mean PPB value (running average over 128 seconds) is above the `PPB Lock Threshold` setting in `PPB` menu.
+
 The GPSDO locked status can be monitored with the padlock icon on the main screen :
 ![GPSDO Lock](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo-lock.png?raw=true)
 
