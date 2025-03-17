@@ -934,7 +934,7 @@ void menu_run()
                     menu_force_redraw();
                     break;
                 case SCREEN_PPB_LOCK_THRESHOLD:
-                    // Update ppb lock threshold
+                    { // Update ppb lock threshold
                     int new_threshold = ppb_lock_threshold + (5*encoder_increment);
                     if(new_threshold < 0)
                     {
@@ -947,6 +947,7 @@ void menu_run()
                     ppb_lock_threshold = new_threshold;
                     LCD_Clear();
                     menu_force_redraw();
+                    }
                     break;
                 default:
                     break;
