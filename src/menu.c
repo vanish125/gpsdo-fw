@@ -107,7 +107,8 @@ bool        trend_auto_v = true;
 uint32_t    gps_baudrate = GPS_DEFAULT_BAUDRATE;
 baudrate    gps_baudrate_enum = BAUDRATE_9600;
 
-uint8_t     gps_time_offset = 0;	// 0-23
+int8_t      gps_time_offset = 0;    // -14/+14
+int8_t      gps_day_offset  = 0;    // -1/+1
 bool        gps_us_date_format = true;
 
 #define     DATE_TIME_DURATION  5
@@ -946,9 +947,14 @@ void menu_run()
                 case SCREEN_GPS_TIME_OFFSET:
                     {   // Update time offset
                         gps_time_offset += encoder_increment;
-                        if (gps_time_offset > 23) {
-                            gps_time_offset = (encoder_increment > 0) ? 0 : 23;
+                        if (gps_time_offset > MAX_TIME_OFFSET) {
+                            gps_time_offset = MIN_TIME_OFFSET;
+                        } 
+                        else if(gps_time_offset < MIN_TIME_OFFSET)
+                        {
+                            gps_time_offset = MAX_TIME_OFFSET;
                         }
+
                         LCD_Clear();
                         menu_force_redraw();
                     }

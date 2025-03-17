@@ -13,7 +13,7 @@
 
 char     gps_line[MAX_GPS_LINE];
 char     gps_time[9]      = { '\0' };
-char     gps_date[9]      = { '\0' };
+char     gps_date[9]      = { ' ', ' ', '/', ' ', ' ', '/', ' ', ' ', '\0' };
 char     gps_latitude[9]  = { '\0' };
 char     gps_longitude[9] = { '\0' };
 char     gps_n_s[2]       = { '\0' };
@@ -227,7 +227,22 @@ void gps_parse(char* line)
 			char p0 = pch[0] - '0';
 			char p1 = pch[1] - '0';
 			int hour = p0 * 10 + p1;
-			hour = (hour + (int)gps_time_offset) % 24;
+            int relative_hour = (hour + (int)gps_time_offset);
+            if(relative_hour >= 24)
+            {
+                hour = relative_hour - 24;
+                gps_day_offset = 1;
+            }
+            else if(relative_hour < 0)
+            {
+                hour = relative_hour + 24;
+                gps_day_offset = -1;
+            }
+            else
+            {
+                hour = relative_hour;
+                gps_day_offset = 0;
+            }
 	        gps_time[0] = (char)((hour / 10) + '0');
 	        gps_time[1] = (char)((hour % 10) + '0');
 		}
@@ -316,25 +331,106 @@ void gps_parse(char* line)
         pch = strtok(NULL, ","); // Orientation
         pch = strtok(NULL, ","); // Date
 
-        if(gps_us_date_format)
-        {
-            gps_date[0] = pch[2];
-            gps_date[1] = pch[3];
-            gps_date[3] = pch[0];
-            gps_date[4] = pch[1];
+        if(strlen(pch)>=6)
+        {   // Ignore empty dates
+            char day0;
+            char day1;
+            char month0;
+            char month1;
+            char year0;
+            char year1;
+            if (gps_time_offset == 0) {
+                day0 = pch[0];
+                day1 = pch[1];
+                month0 = pch[2];
+                month1 = pch[3];
+                year0 = pch[4];
+                year1 = pch[5];
+            } else {
+                char d0 = pch[0] - '0';
+                char d1 = pch[1] - '0';
+                char m0 = pch[2] - '0';
+                char m1 = pch[3] - '0';
+                char y0 = pch[4] - '0';
+                char y1 = pch[5] - '0';
+                int day   = d0 * 10 + d1;
+                int month = m0 * 10 + m1;
+                int year  = y0 * 10 + y1;
+                day += gps_day_offset;
+                // Quick and dirty poor man's gregorian calendar handling
+                // Leap year is not handled
+                if(day > 28 && month == 2)
+                {   // Case of february (leap year not handled)
+                    day = 1;
+                    month = 3;
+                }
+                else if(day > 31 && month == 12)
+                {   // Need to change year
+                    day = 1;
+                    month = 1;
+                    year += 1; 
+                }
+                else if (day > 31 && (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 9 || month == 10))
+                {   // Other month with 31 days
+                    day = 1;
+                    month++;
+                }
+                else if(day > 30)
+                {   // Moths with 30 days
+                    day = 1;
+                    month++;
+                }
+                else if(day < 1)
+                {
+                    if(month == 1)
+                    {   // Need to change year
+                        day = 31;
+                        month = 12;
+                        year--;
+                    }
+                    else if(month == 3)
+                    {   // Case of february, leap year not handled
+                        day = 28;
+                        month--;
+                    }
+                    else if(month == 2 || month == 4 || month == 6 ||month == 8 || month == 9 || month == 11)
+                    {   // Months after a 31 day month
+                        day = 31;
+                        month--;
+                    }
+                    else
+                    {   // Months after a 30 day month
+                        day = 30;
+                        month--;
+                    }
+                }
+                day0   = (char)((day   / 10) + '0');
+                day1   = (char)((day   % 10) + '0');
+                month0 = (char)((month / 10) + '0');
+                month1 = (char)((month % 10) + '0');
+                year0  = (char)((year  / 10) + '0');
+                year1  = (char)((year  % 10) + '0');
+            }
+            if(gps_us_date_format)
+            {
+                gps_date[0] = month0;
+                gps_date[1] = month1;
+                gps_date[3] = day0;
+                gps_date[4] = day1;
+            }
+            else
+            {
+                gps_date[0] = day0;
+                gps_date[1] = day1;
+                gps_date[3] = month0;
+                gps_date[4] = month1;
+            }
+            gps_date[2] = '/';
+            gps_date[5] = '/';
+            gps_date[6] = year0;
+            gps_date[7] = year1;
+            gps_date[8] = '\0';
         }
-        else
-        {
-            gps_date[0] = pch[0];
-            gps_date[1] = pch[1];
-            gps_date[3] = pch[2];
-            gps_date[4] = pch[3];
-        }
-        gps_date[2] = '/';
-        gps_date[5] = '/';
-        gps_date[6] = pch[4];
-        gps_date[7] = pch[5];
-        gps_date[8] = '\0';
     } 
     else if ((gps_model == GPS_MODEL_UNKNOWN) && strstr(line, "TXT") == line+3) 
     {

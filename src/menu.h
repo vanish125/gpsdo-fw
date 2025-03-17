@@ -14,6 +14,10 @@
 #define TREND_LEFT_CODE         0x7F
 #define TREND_RIGHT_CODE        0x7E
 
+// Min and max values for time offset
+#define MIN_TIME_OFFSET     -14
+#define MAX_TIME_OFFSET     14
+
 extern bool trend_auto_h;
 extern bool trend_auto_v;
 extern uint32_t trend_v_scale; 

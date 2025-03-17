@@ -21,7 +21,8 @@ extern uint8_t  num_sats;
 extern uint32_t gga_frames;
 typedef enum { GPS_MODEL_ATGM336H,  GPS_MODEL_NEO6M, GPS_MODEL_NEOM9N, GPS_MODEL_UNKNOWN } gps_model_type;
 extern gps_model_type gps_model;
-extern uint8_t  gps_time_offset;
+extern int8_t   gps_time_offset;
+extern int8_t   gps_day_offset;
 extern bool     gps_us_date_format;
 
 void gps_start_it();

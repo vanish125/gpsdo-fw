@@ -98,7 +98,7 @@ void gpsdo(void)
     if (ee_storage.gps_baudrate == 0xffffffff) {
         ee_storage.gps_baudrate = GPS_DEFAULT_BAUDRATE;
     }
-    if (ee_storage.gps_time_offset == 0xffffffff) {
+    if ((ee_storage.gps_time_offset < MIN_TIME_OFFSET) ||  (ee_storage.gps_time_offset > MAX_TIME_OFFSET)) {
         ee_storage.gps_time_offset = 0;
     }
     gps_time_offset = ee_storage.gps_time_offset;
