@@ -376,7 +376,7 @@ void gps_parse(char* line)
                     month++;
                 }
                 else if(day > 30)
-                {   // Moths with 30 days
+                {   // Months with 30 days
                     day = 1;
                     month++;
                 }
