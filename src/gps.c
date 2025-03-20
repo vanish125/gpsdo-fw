@@ -370,7 +370,7 @@ void gps_parse(char* line)
                     month = 1;
                     year += 1; 
                 }
-                else if (day > 31 && (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 9 || month == 10))
+                else if (day > 31 && (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10))
                 {   // Other month with 31 days
                     day = 1;
                     month++;
