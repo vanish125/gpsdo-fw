@@ -104,6 +104,9 @@ static const char*	atgm336h_baudcommands[] = {
     "$PCAS01,5*19\r\n"      // 115200bps
 };
 
+// ATGM336H save configuration command
+const char*	atgm336h_savecommand = "$PCAS00*01\r\n";
+
 static void gps_sendcommand(const char* cmd, size_t len)
 {
     while (huart3.gState != HAL_UART_STATE_READY);
@@ -115,24 +118,30 @@ static void gps_sendcommand(const char* cmd, size_t len)
 int	gps_configure_module_uart(uint32_t baudrate)
 {
     const char*	command = NULL;
+    const char* save_command = NULL;
     switch(gps_model)
     {
         case GPS_MODEL_ATGM336H:
             switch (baudrate) {
                 case 9600:
                     command = atgm336h_baudcommands[0];
+                    save_command = atgm336h_savecommand;
                     break;
                 case 19200:
                     command = atgm336h_baudcommands[1];
+                    save_command = atgm336h_savecommand;
                     break;
                 case 38400:
                     command = atgm336h_baudcommands[2];
+                    save_command = atgm336h_savecommand;
                     break;
                 case 57600:
                     command = atgm336h_baudcommands[3];
+                    save_command = atgm336h_savecommand;
                     break;
                 case 115200:
                     command = atgm336h_baudcommands[4];
+                    save_command = atgm336h_savecommand;
                     break;
                 default:
                     return -1;  // error
@@ -150,6 +159,11 @@ int	gps_configure_module_uart(uint32_t baudrate)
     if (command != NULL) {
         len = strlen(command);
         gps_sendcommand(command, len);
+        if(save_command != NULL)
+        {
+            len = strlen(save_command);
+            gps_sendcommand(save_command, len);
+        }
     }
 
     return	0;
