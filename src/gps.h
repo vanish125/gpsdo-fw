@@ -19,11 +19,14 @@ extern char     gps_last_frame[];
 extern bool     gps_last_frame_changed;
 extern uint8_t  num_sats;
 extern uint32_t gga_frames;
+// GPS module models
 typedef enum { GPS_MODEL_ATGM336H,  GPS_MODEL_NEO6M, GPS_MODEL_NEOM9N, GPS_MODEL_UNKNOWN } gps_model_type;
-extern gps_model_type gps_model;
+extern gps_model_type   gps_model;
+// Possible date formats
+typedef enum { DATE_FORMAT_UTC = 0, DATE_FORMAT_US, DATE_FORMAT_ISO} date_format;
+extern date_format      gps_date_format;
 extern int8_t   gps_time_offset;
 extern int8_t   gps_day_offset;
-extern bool     gps_us_date_format;
 
 void gps_start_it();
 void gps_parse(char* line);

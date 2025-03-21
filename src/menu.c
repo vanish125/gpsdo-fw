@@ -117,7 +117,6 @@ baudrate    gps_baudrate_enum = BAUDRATE_9600;
 
 int8_t      gps_time_offset = 0;    // -14/+14
 int8_t      gps_day_offset  = 0;    // -1/+1
-bool        gps_us_date_format = true;
 
 #define     DATE_TIME_DURATION  5
 uint8_t     date_time_count = 0;
@@ -626,7 +625,7 @@ static void menu_draw()
                     break;
                 case SCREEN_GPS_DATE_FORMAT:
                     LCD_Puts(1, 0, menu_level == 1 ? "Dt Fmt:":"Dt fmt?");
-                    LCD_Puts(0, 1, gps_us_date_format ? "mm/dd/yy" : "dd/mm/yy");
+                    LCD_Puts(0, 1, (gps_date_format == DATE_FORMAT_UTC) ? "dd/mm/yy" : ((gps_date_format == DATE_FORMAT_US) ? "mm/dd/yy" : "yy/mm/dd"));
                     break;
                 case SCREEN_GPS_MODEL:
                     LCD_Puts(1, 0, menu_level == 1 ? "Model:":"Model?");
@@ -992,7 +991,16 @@ void menu_run()
                     break;
                 case SCREEN_GPS_DATE_FORMAT:
                     {   // Update date format
-                        gps_us_date_format = !gps_us_date_format;
+                        int new_gps_date_format = gps_date_format+encoder_increment;
+                        if(new_gps_date_format < DATE_FORMAT_UTC) 
+                        {
+                            new_gps_date_format = DATE_FORMAT_ISO;
+                        }
+                        else if(new_gps_date_format > DATE_FORMAT_ISO)
+                        {
+                            new_gps_date_format = DATE_FORMAT_UTC;
+                        }
+                        gps_date_format = new_gps_date_format;
                         LCD_Clear();
                         menu_force_redraw();
                     }
@@ -1252,9 +1260,9 @@ void menu_run()
                     }
                     break;
                 case SCREEN_GPS_DATE_FORMAT:
-                    if(ee_storage.gps_us_date_format != gps_us_date_format)
+                    if(ee_storage.gps_date_format != gps_date_format)
                     {   // Save changes
-                        ee_storage.gps_us_date_format = gps_us_date_format;
+                        ee_storage.gps_date_format = gps_date_format;
                         EE_Write();
                     }
                     break;

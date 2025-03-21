@@ -26,7 +26,8 @@ bool     gps_last_frame_changed = false;
 uint8_t  num_sats         = 0;
 uint32_t gga_frames       = 0;
 size_t   gps_line_len     = 0;
-gps_model_type gps_model  = GPS_MODEL_UNKNOWN;
+gps_model_type  gps_model       = GPS_MODEL_UNKNOWN;
+date_format     gps_date_format = DATE_FORMAT_UTC;
 
 
 
@@ -411,24 +412,36 @@ void gps_parse(char* line)
                 year0  = (char)((year  / 10) + '0');
                 year1  = (char)((year  % 10) + '0');
             }
-            if(gps_us_date_format)
+            switch(gps_date_format)
             {
-                gps_date[0] = month0;
-                gps_date[1] = month1;
-                gps_date[3] = day0;
-                gps_date[4] = day1;
-            }
-            else
-            {
-                gps_date[0] = day0;
-                gps_date[1] = day1;
-                gps_date[3] = month0;
-                gps_date[4] = month1;
+                case DATE_FORMAT_UTC:
+                default:
+                    gps_date[0] = day0;
+                    gps_date[1] = day1;
+                    gps_date[3] = month0;
+                    gps_date[4] = month1;
+                    gps_date[6] = year0;
+                    gps_date[7] = year1;
+                    break;
+                case DATE_FORMAT_US:
+                    gps_date[0] = month0;
+                    gps_date[1] = month1;
+                    gps_date[3] = day0;
+                    gps_date[4] = day1;
+                    gps_date[6] = year0;
+                    gps_date[7] = year1;
+                    break;
+                case DATE_FORMAT_ISO:
+                    gps_date[0] = year0;
+                    gps_date[1] = year1;
+                    gps_date[3] = month0;
+                    gps_date[4] = month1;
+                    gps_date[6] = day0;
+                    gps_date[7] = day1;
+                    break;
             }
             gps_date[2] = '/';
             gps_date[5] = '/';
-            gps_date[6] = year0;
-            gps_date[7] = year1;
             gps_date[8] = '\0';
         }
     } 

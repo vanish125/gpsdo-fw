@@ -102,10 +102,10 @@ void gpsdo(void)
         ee_storage.gps_time_offset = -MIN_TIME_OFFSET;
     }
     gps_time_offset = ee_storage.gps_time_offset+MIN_TIME_OFFSET;
-    if (ee_storage.gps_us_date_format == 0xff) {
-        ee_storage.gps_us_date_format = true;
+    if (ee_storage.gps_date_format == 0xff) {
+        ee_storage.gps_date_format = DATE_FORMAT_UTC;
     }
-    gps_us_date_format = ee_storage.gps_us_date_format;
+    gps_date_format = ee_storage.gps_date_format;
     if (ee_storage.gps_model == 0xff) {
         ee_storage.gps_model = GPS_MODEL_UNKNOWN;
     }
