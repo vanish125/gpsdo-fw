@@ -3,6 +3,7 @@
 #include "main.h"
 #include "stm32f1xx_hal_uart.h"
 #include "usart.h"
+#include "eeprom.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -447,17 +448,26 @@ void gps_parse(char* line)
     } 
     else if ((gps_model == GPS_MODEL_UNKNOWN) && strstr(line, "TXT") == line+3) 
     {
+        bool model_found = false;
         if (strstr(line, "AT6558F-5N")) {
             // this is ATGM336H module
             gps_model = GPS_MODEL_ATGM336H;
+            model_found = true;
         }
         else if(strstr(line, "HW UBX-G"))
         {
             gps_model = GPS_MODEL_NEO6M;
+            model_found = true;
         }
         else if(strstr(line, "HW UBX 9"))
         {
             gps_model = GPS_MODEL_NEOM9N;
+            model_found = true;
+        }
+        if(model_found && (ee_storage.gps_model != gps_model))
+        {   // Save changes
+            ee_storage.gps_model = gps_model;
+            EE_Write();
         }
     }
     // Store last received frame for debug purpose
