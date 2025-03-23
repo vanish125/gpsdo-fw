@@ -118,30 +118,24 @@ static void gps_sendcommand(const char* cmd, size_t len)
 int	gps_configure_module_uart(uint32_t baudrate)
 {
     const char*	command = NULL;
-    const char* save_command = NULL;
     switch(gps_model)
     {
         case GPS_MODEL_ATGM336H:
             switch (baudrate) {
                 case 9600:
                     command = atgm336h_baudcommands[0];
-                    save_command = atgm336h_savecommand;
                     break;
                 case 19200:
                     command = atgm336h_baudcommands[1];
-                    save_command = atgm336h_savecommand;
                     break;
                 case 38400:
                     command = atgm336h_baudcommands[2];
-                    save_command = atgm336h_savecommand;
                     break;
                 case 57600:
                     command = atgm336h_baudcommands[3];
-                    save_command = atgm336h_savecommand;
                     break;
                 case 115200:
                     command = atgm336h_baudcommands[4];
-                    save_command = atgm336h_savecommand;
                     break;
                 default:
                     return -1;  // error
@@ -159,11 +153,6 @@ int	gps_configure_module_uart(uint32_t baudrate)
     if (command != NULL) {
         len = strlen(command);
         gps_sendcommand(command, len);
-        if(save_command != NULL)
-        {
-            len = strlen(save_command);
-            gps_sendcommand(save_command, len);
-        }
     }
 
     return	0;
@@ -205,6 +194,31 @@ void gps_reconfigure_uart(uint32_t baudrate)
     HAL_Delay(50);
     gps_start_gps_rx();
     gps_start_comm_rx();
+}
+
+void gps_save_config()
+{
+    const char* save_command = NULL;
+    switch(gps_model)
+    {
+        case GPS_MODEL_ATGM336H:
+            // Give some time for the module to reconfigure before sending the save command
+            HAL_Delay(50);
+            save_command = atgm336h_savecommand;
+            break;
+        case GPS_MODEL_NEO6M:
+            // TODO
+        case GPS_MODEL_NEOM9N:
+            // TODO
+        case GPS_MODEL_UNKNOWN:
+            break;
+    }
+
+    size_t len;
+    if (save_command != NULL) {
+        len = strlen(save_command);
+        gps_sendcommand(save_command, len);
+    }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)

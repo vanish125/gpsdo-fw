@@ -1248,12 +1248,16 @@ void menu_run()
                         ee_storage.gps_baudrate = gps_baudrate;
                         EE_Write();
                         // Reconfigure uart
-                        gps_configure_module_uart(gps_baudrate);
-                        gps_reconfigure_uart(gps_baudrate);
+                        if(gps_configure_module_uart(gps_baudrate)>=0)
+                        {   // Reconfigure uart
+                            gps_reconfigure_uart(gps_baudrate);
+                            // Save new baudrate on gps module
+                            gps_save_config();
+                        }
                     }
                     break;
                 case SCREEN_GPS_TIME_OFFSET:
-                    if(ee_storage.gps_time_offset != (gps_time_offset-MIN_TIME_OFFSET))
+                    if(ee_storage.gps_time_offset != ((uint32_t)(gps_time_offset-MIN_TIME_OFFSET)))
                     {   // Save changes
                         ee_storage.gps_time_offset = gps_time_offset-MIN_TIME_OFFSET;
                         EE_Write();
