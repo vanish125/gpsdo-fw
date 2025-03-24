@@ -49,7 +49,7 @@ Here is the menu tree :
   - `HDOP`: the current Horizontal Dilution Of Precision value
   - `Baudrate`: set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly)
   - `Time Zone offset`: set the number of hours (-14/+14) to shift the displayed time from UTC to match local time
-  - `Date Format`: set the date format (either `mm/dd/yy` (default value) or `dd/mm/yy`)
+  - `Date Format`: set the date format (either `mm/dd/yy` (default value), `dd/mm/yy` or `yy/mm/dd`)
   - `Model`: displays the detected GPS module model, press to manually set the GPS module model
   - `Frame`: displays to first characters of the last frame received from the GPS module
   - `Exit`: press to exit the GPS sub-menu
