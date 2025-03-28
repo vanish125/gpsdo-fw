@@ -9,8 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
-#define MAX_GPS_LINE 512
+#define MAX_GPS_LINE        512
+#define GPS_LOCATOR_SIZE    8
 
 char     gps_line[MAX_GPS_LINE];
 char     gps_time[9]      = { '\0' };
@@ -23,6 +25,8 @@ double   gps_msl_altitude;
 double   gps_geoid_separation;
 double   gps_latitude_double  = 0;
 double   gps_longitude_double = 0;
+char     gps_locator[GPS_LOCATOR_SIZE+1];
+
 char     gps_hdop[9]      = { '\0' };
 char     gps_last_frame[9]= { '\0' };
 bool     gps_last_frame_changed = false;
@@ -284,6 +288,31 @@ static double gps_parse_coordinate(char* nmea_string, char* coord_string, size_t
     return result;
 }
 
+static char gps_letterize(int x) {
+    return (char) x + 65;
+}
+
+static void gps_compute_locator(double lat, double lon) {
+    double LON_F[]={20,2.0,0.083333,0.008333};
+    double LAT_F[]={10,1.0,0.0416665,0.004166};
+    int i;
+    lon += 180;
+    lat += 90;
+
+    for (i = 0; i < GPS_LOCATOR_SIZE/2; i++){
+        if (i % 2 == 1) {
+            gps_locator[i*2] = (char) (lon/LON_F[i] + '0');
+            gps_locator[i*2+1] = (char) (lat/LAT_F[i] + '0');
+        } else {
+            gps_locator[i*2] = gps_letterize((int) (lon/LON_F[i]));
+            gps_locator[i*2+1] = gps_letterize((int) (lat/LAT_F[i]));
+        }
+        lon = fmod(lon, LON_F[i]);
+        lat = fmod(lat, LAT_F[i]);
+    }
+    gps_locator[i*2]=0;
+}
+
 // Maybe use X-CUBE-GNSS here?
 void gps_parse(char* line)
 {
@@ -344,6 +373,7 @@ void gps_parse(char* line)
             if(gps_e_w[0] == 'W')
                 gps_longitude_double*=-1;
         }
+        gps_compute_locator(gps_latitude_double,gps_longitude_double);
         strtok(NULL, ","); // Fix
 
         num_sats = atoi(strtok(NULL, ",")); // Num sats used
