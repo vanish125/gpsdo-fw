@@ -650,7 +650,7 @@ static void menu_draw()
                     break;
                 case SCREEN_GPS_DATE_FORMAT:
                     LCD_Puts(1, 0, menu_level == 1 ? "Dt Fmt:":"Dt fmt?");
-                    LCD_Puts(0, 1, (gps_date_format == DATE_FORMAT_UTC) ? "dd/mm/yy" : ((gps_date_format == DATE_FORMAT_US) ? "mm/dd/yy" : "yy/mm/dd"));
+                    LCD_Puts(0, 1, (gps_date_format == DATE_FORMAT_UTC) ? "dd/mm/yy" : ((gps_date_format == DATE_FORMAT_US) ? "mm/dd/yy" : ((gps_date_format == DATE_FORMAT_ISO) ? "yy/mm/dd" : ((gps_date_format == DATE_FORMAT_UTC_DOT) ? "dd.mm.yy" : "yy-mm-dd"))));
                     break;
                 case SCREEN_GPS_MODEL:
                     LCD_Puts(1, 0, menu_level == 1 ? "Model:":"Model?");
@@ -1019,9 +1019,9 @@ void menu_run()
                         int new_gps_date_format = gps_date_format+encoder_increment;
                         if(new_gps_date_format < DATE_FORMAT_UTC) 
                         {
-                            new_gps_date_format = DATE_FORMAT_ISO;
+                            new_gps_date_format = DATE_FORMAT_ISO_DASH;
                         }
-                        else if(new_gps_date_format > DATE_FORMAT_ISO)
+                        else if(new_gps_date_format > DATE_FORMAT_ISO_DASH)
                         {
                             new_gps_date_format = DATE_FORMAT_UTC;
                         }

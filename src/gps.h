@@ -26,7 +26,7 @@ extern uint32_t gga_frames;
 typedef enum { GPS_MODEL_ATGM336H,  GPS_MODEL_NEO6M, GPS_MODEL_NEOM9N, GPS_MODEL_UNKNOWN } gps_model_type;
 extern gps_model_type   gps_model;
 // Possible date formats
-typedef enum { DATE_FORMAT_UTC = 0, DATE_FORMAT_US, DATE_FORMAT_ISO} date_format;
+typedef enum { DATE_FORMAT_UTC = 0, DATE_FORMAT_US, DATE_FORMAT_ISO, DATE_FORMAT_UTC_DOT, DATE_FORMAT_ISO_DASH} date_format;
 extern date_format      gps_date_format;
 extern int8_t   gps_time_offset;
 extern int8_t   gps_day_offset;

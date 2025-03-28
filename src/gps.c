@@ -488,6 +488,7 @@ void gps_parse(char* line)
             switch(gps_date_format)
             {
                 case DATE_FORMAT_UTC:
+                case DATE_FORMAT_UTC_DOT:
                 default:
                     gps_date[0] = day0;
                     gps_date[1] = day1;
@@ -505,6 +506,7 @@ void gps_parse(char* line)
                     gps_date[7] = year1;
                     break;
                 case DATE_FORMAT_ISO:
+                case DATE_FORMAT_ISO_DASH:
                     gps_date[0] = year0;
                     gps_date[1] = year1;
                     gps_date[3] = month0;
@@ -513,8 +515,21 @@ void gps_parse(char* line)
                     gps_date[7] = day1;
                     break;
             }
-            gps_date[2] = '/';
-            gps_date[5] = '/';
+            switch(gps_date_format)
+            {
+                default:
+                    gps_date[2] = '/';
+                    gps_date[5] = '/';
+                    break;
+                case DATE_FORMAT_UTC_DOT:
+                    gps_date[2] = '.';
+                    gps_date[5] = '.';
+                    break;
+                case DATE_FORMAT_ISO_DASH:
+                    gps_date[2] = '-';
+                    gps_date[5] = '-';
+                    break;
+            }
             gps_date[8] = '\0';
         }
     } 
