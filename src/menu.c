@@ -591,7 +591,7 @@ static void menu_draw()
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Lat.D:");
                     LCD_Puts(1, 0, screen_buffer);
                     double coord_int = floor(gps_latitude_double);
-                    double coord_frac = (gps_latitude_double - coord_int)*100000;
+                    double coord_frac = (gps_latitude_double - coord_int)*1000000;
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%d.%d", ((int)coord_int), ((int)coord_frac));
                     LCD_Puts(0, 1, screen_buffer);
                     }
@@ -601,7 +601,7 @@ static void menu_draw()
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Long.D:");
                     LCD_Puts(1, 0, screen_buffer);
                     double coord_int = floor(gps_longitude_double);
-                    double coord_frac = (gps_longitude_double - coord_int)*100000;
+                    double coord_frac = (gps_longitude_double - coord_int)*1000000;
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%d.%d", ((int)coord_int), ((int)coord_frac));
                     LCD_Puts(0, 1, screen_buffer);
                     }
