@@ -76,7 +76,7 @@ void lcd_create_chars()
 
 typedef enum { SCREEN_MAIN, SCREEN_DATE, SCREEN_DATE_TIME, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
-typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_DATE_FORMAT, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
+typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_LATITUDE_DEC, SCREEN_GPS_LONGITUDE_DEC, SCREEN_GPS_LOCATOR, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_DATE_FORMAT, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
 typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_LOCK_THRESHOLD, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_EXIT, SCREEN_PPS_MAX } menu_pps_screen;
 
@@ -585,6 +585,31 @@ static void menu_draw()
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Long.:%s", gps_e_w);
                     LCD_Puts(1, 0, screen_buffer);
                     LCD_Puts(0, 1, gps_longitude);
+                    break;
+                case SCREEN_GPS_LATITUDE_DEC:
+                    {
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Lat.D:");
+                    LCD_Puts(1, 0, screen_buffer);
+                    double coord_int = floor(gps_latitude_double);
+                    double coord_frac = (gps_latitude_double - coord_int)*100000;
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%d.%d", ((int)coord_int), ((int)coord_frac));
+                    LCD_Puts(0, 1, screen_buffer);
+                    }
+                break;
+                case SCREEN_GPS_LONGITUDE_DEC:
+                    {
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Long.D:");
+                    LCD_Puts(1, 0, screen_buffer);
+                    double coord_int = floor(gps_longitude_double);
+                    double coord_frac = (gps_longitude_double - coord_int)*100000;
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%d.%d", ((int)coord_int), ((int)coord_frac));
+                    LCD_Puts(0, 1, screen_buffer);
+                    }
+                    break;
+                case SCREEN_GPS_LOCATOR:
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "Lcator:");
+                    LCD_Puts(1, 0, screen_buffer);
+                    LCD_Puts(0, 1, gps_locator);
                     break;
                 case SCREEN_GPS_ALTITUDE:
                     {
