@@ -21,6 +21,8 @@ char     gps_n_s[2]       = { '\0' };
 char     gps_e_w[2]       = { '\0' };
 double   gps_msl_altitude;
 double   gps_geoid_separation;
+double   gps_latitude_double  = 0;
+double   gps_longitude_double = 0;
 char     gps_hdop[9]      = { '\0' };
 char     gps_last_frame[9]= { '\0' };
 bool     gps_last_frame_changed = false;
@@ -242,6 +244,46 @@ void gps_start_it()
     gps_start_comm_rx();
 }
 
+static double gps_parse_coordinate(char* nmea_string, char* coord_string, size_t size)
+{
+    double result = 0;
+    char* dot_substring = strstr(nmea_string,".");
+    if(dot_substring != NULL)
+    {
+        uint8_t i = 0;
+        uint8_t j = 0;
+        bool lead = true;
+        while(nmea_string[i] != 0 && j < (size-1))
+        {
+            if(nmea_string[i] != '.' && (nmea_string[i] != '0'||!lead))
+            {
+                coord_string[j] = nmea_string[i];
+                j++;
+                lead = false;
+            }
+            i++;
+        }
+        coord_string[j] = 0;
+        // Parse value and convert to decimal
+        int dot_position = dot_substring - nmea_string;
+        int len = strlen(nmea_string);
+        if(dot_position >= 2 && dot_position <= 5 && len < 16)
+        {
+            char gps_buffer[16];
+            int buff_len = len-(dot_position-2);
+            strncpy(gps_buffer, nmea_string+(dot_position-2),buff_len);
+            gps_buffer[buff_len] = 0; // Terminate string
+            double mins = atof(gps_buffer);
+            buff_len = dot_position-2;
+            strncpy(gps_buffer, nmea_string, buff_len);
+            gps_buffer[buff_len] = 0; // Terminate string
+            int deg = atoi(gps_buffer);
+            result = deg + mins/60;
+        }
+    }
+    return result;
+}
+
 // Maybe use X-CUBE-GNSS here?
 void gps_parse(char* line)
 {
@@ -285,50 +327,22 @@ void gps_parse(char* line)
         gps_time[8] = '\0';
 
         pch = strtok(NULL, ","); // Latitude
-        if(strstr(pch,".") != NULL)
-        {
-            uint8_t i = 0;
-            uint8_t j = 0;
-            bool lead = true;
-            while(pch[i] != 0 && j < (sizeof(gps_latitude)-1))
-            {
-                if(pch[i] != '.' && (pch[i] != '0'||!lead))
-                {
-                    gps_latitude[j] = pch[i];
-                    j++;
-                    lead = false;
-                }
-                i++;
-            }
-            gps_latitude[j] = 0;
-        }
+        gps_latitude_double = gps_parse_coordinate(pch,gps_latitude,sizeof(gps_latitude));
         pch = strtok(NULL, ","); // N/S
         if(strlen(pch)<sizeof(gps_n_s))
         {
             strcpy(gps_n_s,pch);
+            if(gps_n_s[0] == 'S')
+                gps_latitude_double*=-1;
         }
         pch = strtok(NULL, ","); // Longitude
-        if(strstr(pch,".") != NULL)
-        {
-            uint8_t i = 0;
-            uint8_t j = 0;
-            bool lead = true;
-            while(pch[i] != 0 && j < (sizeof(gps_longitude)-1))
-            {
-                if(pch[i] != '.' && (pch[i] != '0'||!lead))
-                {
-                    gps_longitude[j] = pch[i];
-                    j++;
-                    lead = false;
-                }
-                i++;
-            }
-            gps_longitude[j] = 0;
-        }
+        gps_longitude_double = gps_parse_coordinate(pch,gps_longitude,sizeof(gps_longitude));
         pch = strtok(NULL, ","); // E/W
         if(strlen(pch)<sizeof(gps_e_w))
         {
             strcpy(gps_e_w,pch);
+            if(gps_e_w[0] == 'W')
+                gps_longitude_double*=-1;
         }
         strtok(NULL, ","); // Fix
 
