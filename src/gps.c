@@ -313,22 +313,61 @@ static void gps_compute_locator(double lat, double lon) {
     gps_locator[i*2]=0;
 }
 
+static bool change_time(char* time_source, char* time_dest, int correction, int max_value)
+{
+    bool overlap = false;
+    int value = (10*(time_source[0]-'0')) + (time_source[1]-'0') + correction;
+    if(value > max_value)
+    {
+        value = 0;
+        overlap = true;
+    } 
+    time_dest[0] = (char)((value/10)+'0');
+    time_dest[1] = (char)((value%10)+'0');
+    return overlap;
+}
+
 // Maybe use X-CUBE-GNSS here?
 void gps_parse(char* line)
 {
-    if (strstr(line, "GGA") == line+3) {
+    if (strstr(line, "GGA") == line+3) 
+    {
         char* pch = strtok(line, ",");
 
         pch = strtok(NULL, ","); // Time
 
-        if (gps_time_offset == 0) {
+        // GPSDO screen is updated once every second, when receiving the PPS signal
+        // BUT, the GGA frame is received a fraction of second AFTER the PPS pulse
+        // To achieve accurate time display, we will add one second to the received time
+        // to compensate this delay
+
+        // Let's start with seconds value, to propagate overlap to minutes and hours if needed
+        bool overlap = change_time(pch+4,gps_time+6,1,59);
+        if(overlap)
+        {   // Need to propagate overlap to minutes
+            overlap = change_time(pch+2,gps_time+3,1,59);
+        }
+        else
+        {
+            gps_time[3] = pch[2];
+            gps_time[4] = pch[3];
+        }
+
+        if (gps_time_offset == 0 && !overlap) 
+        {   // Leave hour unchanged
 	        gps_time[0] = pch[0];
 	        gps_time[1] = pch[1];
-		} else {
+		} 
+        else 
+        {   // Need to fix hour
 			char p0 = pch[0] - '0';
 			char p1 = pch[1] - '0';
 			int hour = p0 * 10 + p1;
             int relative_hour = (hour + (int)gps_time_offset);
+            if(overlap)
+            {   // Propagate second / minute overlap
+                relative_hour+=1;
+            }
             if(relative_hour >= 24)
             {
                 hour = relative_hour - 24;
@@ -347,12 +386,10 @@ void gps_parse(char* line)
 	        gps_time[0] = (char)((hour / 10) + '0');
 	        gps_time[1] = (char)((hour % 10) + '0');
 		}
+        // Add separators
         gps_time[2] = ':';
-        gps_time[3] = pch[2];
-        gps_time[4] = pch[3];
         gps_time[5] = ':';
-        gps_time[6] = pch[4];
-        gps_time[7] = pch[5];
+        // Terminaute time string
         gps_time[8] = '\0';
 
         pch = strtok(NULL, ","); // Latitude

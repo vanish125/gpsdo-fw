@@ -118,8 +118,8 @@ baudrate    gps_baudrate_enum = BAUDRATE_9600;
 int8_t      gps_time_offset = 0;    // -14/+14
 int8_t      gps_day_offset  = 0;    // -1/+1
 
-#define     DATE_TIME_DURATION  5
-uint8_t     date_time_count = 0;
+#define         DATE_TIME_DURATION  5000 // Change date/time screen display every 5 seconds
+static uint32_t last_hour_date_screen_update = 0;
 
 uint32_t    ppb_lock_threshold = DEFAULT_PPB_LOCK_THRESHOLD;
 
@@ -406,7 +406,9 @@ static void menu_draw()
         }
         else // SCREEN_DATE_TIME
         {
-            if(date_time_count < DATE_TIME_DURATION)
+            uint32_t now = HAL_GetTick();
+            uint32_t duration = now - last_hour_date_screen_update;
+            if(duration <= DATE_TIME_DURATION)
             {
                 LCD_Puts(0, 1, gps_time);
             }
@@ -414,10 +416,9 @@ static void menu_draw()
             {
                 LCD_Puts(0, 1, gps_date);
             }
-            date_time_count++;
-            if(date_time_count >= 2*DATE_TIME_DURATION)
+            if(duration >= 2*DATE_TIME_DURATION)
             {
-                date_time_count = 0;
+                last_hour_date_screen_update = now;
             }
         }
         break;
@@ -801,12 +802,13 @@ void menu_run()
         {   // Main menu => change menu screen
             current_menu_screen =  (current_menu_screen + encoder_increment) % SCREEN_MAX;
             if(current_menu_screen >= SCREEN_MAX) current_menu_screen = SCREEN_MAX-1; // Roll over for first sceen - 1
+            uint32_t now = HAL_GetTick();
             if(current_menu_screen != previous_menu_screen)
             {
-                last_menu_change = HAL_GetTick();
+                last_menu_change = now;
             }
             // Reset counter for date/time screen
-            date_time_count = 0;
+            last_hour_date_screen_update = now;
             LCD_Clear();
             menu_force_redraw();
         }
