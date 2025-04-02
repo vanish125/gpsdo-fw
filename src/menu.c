@@ -18,7 +18,7 @@
 #define BOOT_MENU_SAVE_TIME     3*1000
 
 // Firmware version tag
-#define FIRMWARE_VERSION        "v0.1.12"
+#define FIRMWARE_VERSION        "v0.1.13"
 
 volatile uint32_t rotary_down_time      = 0;
 volatile uint32_t rotary_up_time        = 0;
