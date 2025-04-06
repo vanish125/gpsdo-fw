@@ -140,7 +140,7 @@ The dedicated `PPS` menu allows monitoring the deviation between the MCU control
 
 #### GPS UART Passthrough
 
-A GPS UART passthrough has been added on UART1: pins PA2 (TX) and PA3 (RX) can be used to communicate with the GPS module. This is bidirectional, so the GPS can be used by a computer or configured via manufacturer software.
+A GPS UART passthrough has been added on UART2: pins PA2 (TX) and PA3 (RX) can be used to communicate with the GPS module. This is bidirectional, so the GPS can be used by a computer or configured via manufacturer software.
 
 ![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gps-passthrough.jpg?raw=true)
 
