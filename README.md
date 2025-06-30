@@ -117,7 +117,8 @@ You now have access to the bluepill board, but you need to bend the 4 pins of th
 You can now launch the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html) click `Connect`, click `Open File`, select the `gpsdo.bin` file downloaded in the [Release section](https://github.com/fredzo/gpsdo-fw/releases) and hit `Download` in STM32CubeProgrammer:
 ![Bend pins](https://github.com/fredzo/gpsdo-fw/blob/main/doc/stm32-cube-programmer.png?raw=true)
 
-For video instructions, you can check Tony Albus's BH3SAP GPSDO review at 7 min 20 sec : https://youtu.be/FxD5QzaOiZ4?si=cG4ZLxorPYdLfWqJ&t=440
+For video instructions, you can check [Tony Albus's BH3SAP GPSDO review at 7'20''](https://www.youtube.com/watch?v=FxD5QzaOiZ4&t=440s): 
+[![Tony Albus's BH3SAP GPSDO review](https://img.youtube.com/vi/FxD5QzaOiZ4/0.jpg)](https://www.youtube.com/watch?v=FxD5QzaOiZ4&t=440s)
 
 ### Hardware Extensions
 
