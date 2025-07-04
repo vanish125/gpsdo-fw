@@ -594,10 +594,10 @@ static void menu_draw()
                     const char *fmt = "%d.%d";
                     double gps_latitude_double_abs = gps_latitude_double;
                     if (gps_latitude_double < 0.0)
-                        {
+                    {
                             gps_latitude_double_abs *= -1.0;
                             fmt = "-%d.%d";
-                        }
+                    }
                     double coord_int = floor(gps_latitude_double_abs);
                     double coord_frac = (gps_latitude_double_abs - coord_int)*1000000;
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, fmt, ((int)coord_int), ((int)coord_frac));
@@ -611,10 +611,10 @@ static void menu_draw()
                     const char *fmt = "%d.%d";
                     double gps_longitude_double_abs = gps_longitude_double;
                     if (gps_longitude_double < 0.0)
-                        {
+                    {
                             gps_longitude_double_abs *= -1.0;
                             fmt = "-%d.%d";
-                        }
+                    }
                     double coord_int = floor(gps_longitude_double_abs);
                     double coord_frac = (gps_longitude_double_abs - coord_int)*1000000;
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, fmt, ((int)coord_int), ((int)coord_frac));
