@@ -123,6 +123,19 @@ static uint32_t last_hour_date_screen_update = 0;
 
 uint32_t    ppb_lock_threshold = DEFAULT_PPB_LOCK_THRESHOLD;
 
+static void menu_to_string_with_two_decimals(int value, char *buffer, size_t bufferSize)
+{
+    // Divide the value by 100 and keep the remainder.
+    int integerPart = value / 100;
+    int decimalPart = abs(value % 100);
+
+    // Make sure negative values are displayed correctly.
+    snprintf(buffer, bufferSize, "%s%d.%02d",
+             value < 0 && integerPart == 0 ? "-" : "",
+             integerPart,
+             decimalPart);
+}
+
 uint32_t menu_get_baudrate_value(baudrate baudrate_enum)
 {
     uint32_t result;
@@ -488,7 +501,7 @@ static void menu_draw()
             ppb = frequency_get_ppb();
             LCD_Puts(1, 0, "PPB:   ");
             LCD_Puts(0, 1, "        ");
-            snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%02d", ppb / 100, abs(ppb) % 100);
+            menu_to_string_with_two_decimals(ppb, screen_buffer, SCREEN_BUFFER_SIZE);
             LCD_Puts(0, 1, screen_buffer);
         }
         else
@@ -501,7 +514,7 @@ static void menu_draw()
                 case SCREEN_PPB_MEAN:
                     ppb = frequency_get_ppb();
                     LCD_Puts(1, 0, "Mean:");
-                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld.%02d", ppb / 100, abs(ppb) % 100);
+                    menu_to_string_with_two_decimals(ppb, screen_buffer, SCREEN_BUFFER_SIZE);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_INST:
