@@ -161,6 +161,11 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+
+  // Reset in stead of hang.
+  // Fixes the startup problem when the clock does not start quick enough at power up.
+  HAL_NVIC_SystemReset();
+  
   __disable_irq();
   while (1)
   {
