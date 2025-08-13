@@ -126,12 +126,12 @@ uint32_t    ppb_lock_threshold = DEFAULT_PPB_LOCK_THRESHOLD;
 static void menu_to_string_with_two_decimals(int value, char *buffer, size_t bufferSize)
 {
     // Divide the value by 100 and keep the remainder.
-    int integerPart = value / 100;
+    int integerPart = abs(value / 100);
     int decimalPart = abs(value % 100);
 
-    // Make sure negative values are displayed correctly.
+    // Make sure negative values <0 are displayed correctly.
     snprintf(buffer, bufferSize, "%s%d.%02d",
-             value < 0 && integerPart == 0 ? "-" : "",
+             value < 0 ? "-" : "",
              integerPart,
              decimalPart);
 }
