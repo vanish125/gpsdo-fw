@@ -47,7 +47,7 @@ void gpsdo(void)
     if (ee_storage.ocxo_model == 0xff) {
         ee_storage.ocxo_model = OCXO_MODEL_UNKNOWN;
     }
-    gps_model = ee_storage.gps_model;
+    ocxo_model = ee_storage.ocxo_model;
     uint16_t startingPwm;
     if (ee_storage.pwm == 0xffff) {
         // Pwm not initialized choose starting point based on OCXO model
