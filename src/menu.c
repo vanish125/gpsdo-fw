@@ -77,7 +77,7 @@ void lcd_create_chars()
 typedef enum { SCREEN_MAIN, SCREEN_DATE, SCREEN_DATE_TIME, SCREEN_TREND, SCREEN_PPB, SCREEN_PWM, SCREEN_GPS, SCREEN_UPTIME, SCREEN_FRAMES, SCREEN_CONTRAST, SCREEN_PPS, SCREEN_VERSION, SCREEN_MAX } menu_screen;
 typedef enum { SCREEN_TREND_MAIN, SCREEN_TREND_AUTO_V, SCREEN_TREND_AUTO_H, SCREEN_TREND_V_SCALE, SCREEN_TREND_H_SCALE, SCREEN_TREND_EXIT, SCREEN_TREND_MAX } menu_trend_screen;
 typedef enum { SCREEN_GPS_TIME, SCREEN_GPS_LATITUDE, SCREEN_GPS_LONGITUDE, SCREEN_GPS_LATITUDE_DEC, SCREEN_GPS_LONGITUDE_DEC, SCREEN_GPS_LOCATOR, SCREEN_GPS_ALTITUDE, SCREEN_GPS_GEOID, SCREEN_GPS_SATELITES, SCREEN_GPS_HDOP, SCREEN_GPS_BAUDRATE, SCREEN_GPS_TIME_OFFSET, SCREEN_GPS_DATE_FORMAT, SCREEN_GPS_MODEL, SCREEN_GPS_LAST_FRAME, SCREEN_GPS_EXIT, SCREEN_GPS_MAX } menu_gps_screen;
-typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_LOCK_THRESHOLD, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
+typedef enum { SCREEN_PPB_MEAN, SCREEN_PPB_INST, SCREEN_PPB_FREQUENCY, SCREEN_PPB_ERROR, SCREEN_PPB_CORRECTION, SCREEN_PPB_OCXO_MODEL, SCREEN_PPB_ALGO, SCREEN_PPB_CORRECTION_FACTOR, SCREEN_PPB_MILLIS, SCREEN_PPB_AUTO_SAVE_PWM, SCREEN_PPB_AUTO_SYNC_PPS, SCREEN_PPB_LOCK_THRESHOLD, SCREEN_PPB_EXIT, SCREEN_PPB_MAX } menu_ppb_screen;
 typedef enum { SCREEN_PPS_SHIFT, SCREEN_PPS_SHIFT_MS, SCREEN_PPS_SYNC_COUNT, SCREEN_PPS_SYNC_MODE, SCREEN_PPS_SYNC_DELAY, SCREEN_PPS_SYNC_THRESHOLD, SCREEN_PPS_FORCE_SYNC, SCREEN_PPS_EXIT, SCREEN_PPS_MAX } menu_pps_screen;
 
 // Possible baudrate values
@@ -122,6 +122,8 @@ int8_t      gps_day_offset  = 0;    // -1/+1
 static uint32_t last_hour_date_screen_update = 0;
 
 uint32_t    ppb_lock_threshold = DEFAULT_PPB_LOCK_THRESHOLD;
+
+correction_algo_type displayed_correction_algorithm;
 
 static void menu_to_string_with_two_decimals(int value, char *buffer, size_t bufferSize)
 {
@@ -217,6 +219,11 @@ void menu_set_gps_baudrate(uint32_t baudrate)
         gps_configure_module_uart(gps_baudrate);
         gps_reconfigure_uart(gps_baudrate);
     }
+}
+
+void menu_set_correction_algorithm(correction_algo_type algo)
+{
+    displayed_correction_algorithm = algo;
 }
 
 void menu_set_current_menu(uint8_t current_menu)
@@ -538,6 +545,43 @@ static void menu_draw()
                 case SCREEN_PPB_CORRECTION:
                     LCD_Puts(1, 0, "Corr.:");
                     snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", ppb_correction);
+                    LCD_Puts(0, 1, screen_buffer);
+                    break;
+                case SCREEN_PPB_OCXO_MODEL:
+                    LCD_Puts(1, 0, menu_level == 1 ? "OCXO:":"OCXO?");
+                    switch(ocxo_model)
+                    {
+                        case OCXO_MODEL_ISOTEMP:
+                            LCD_Puts(0, 1, "ISOTEMP");
+                            break;
+                        case OCXO_MODEL_OX256B:
+                            LCD_Puts(0, 1, "OX256B");
+                            break;
+                        default:
+                        case OCXO_MODEL_UNKNOWN:
+                            LCD_Puts(0, 1, "Unknown");
+                            break;
+                    }
+                    break;
+                case SCREEN_PPB_ALGO:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Algo.:":"Algo?");
+                    switch(displayed_correction_algorithm)
+                    {
+                        case CORRECTION_ALGO_DANKAR:
+                            LCD_Puts(0, 1, "Dankar");
+                            break;
+                        case CORRECTION_ALGO_ERIC_H:
+                            LCD_Puts(0, 1, "Eric H");
+                            break;
+                        default:
+                        case CORRECTION_ALGO_FREDZO:
+                            LCD_Puts(0, 1, "Fredzo");
+                            break;
+                    }
+                    break;
+                case SCREEN_PPB_CORRECTION_FACTOR:
+                    LCD_Puts(1, 0, menu_level == 1 ? "Corr.F:":"Corr.F?");
+                    snprintf(screen_buffer, SCREEN_BUFFER_SIZE, "%ld", correction_factor);
                     LCD_Puts(0, 1, screen_buffer);
                     break;
                 case SCREEN_PPB_MILLIS:
@@ -974,6 +1018,29 @@ void menu_run()
         {   // Sub-sub menu for PPB screen
             switch(current_menu_ppb_screen)
             {
+                case SCREEN_PPB_OCXO_MODEL:
+                    { // Update model
+                    ocxo_model =  (ocxo_model + encoder_increment) % (OCXO_MODEL_UNKNOWN+1);
+                    if(ocxo_model > OCXO_MODEL_UNKNOWN) ocxo_model = OCXO_MODEL_UNKNOWN;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    }
+                    break;
+                case SCREEN_PPB_ALGO:
+                    { // Update algorithm
+                    displayed_correction_algorithm =  (displayed_correction_algorithm + encoder_increment) % (CORRECTION_ALGO_ERIC_H+1);
+                    if(displayed_correction_algorithm > CORRECTION_ALGO_ERIC_H) displayed_correction_algorithm = CORRECTION_ALGO_ERIC_H;
+                    LCD_Clear();
+                    menu_force_redraw();
+                    }
+                    break;
+                case SCREEN_PPB_CORRECTION_FACTOR:
+                    { // Update correction factor
+                    correction_factor = increment_correction_factor_value(correction_algorithm,correction_factor,encoder_increment);
+                    LCD_Clear();
+                    menu_force_redraw();
+                    }
+                    break;
                 case SCREEN_PPB_AUTO_SAVE_PWM:
                     // Update mode
                     pwm_auto_save = !pwm_auto_save;
@@ -1170,6 +1237,9 @@ void menu_run()
                 case SCREEN_PPB:
                     switch(current_menu_ppb_screen)
                     {
+                        case SCREEN_PPB_OCXO_MODEL:
+                        case SCREEN_PPB_ALGO:
+                        case SCREEN_PPB_CORRECTION_FACTOR:
                         case SCREEN_PPB_AUTO_SAVE_PWM:
                         case SCREEN_PPB_AUTO_SYNC_PPS:
                         case SCREEN_PPB_LOCK_THRESHOLD:
@@ -1267,6 +1337,32 @@ void menu_run()
         } else  if (menu_level == 2 && current_menu_screen == SCREEN_PPB){
             switch(current_menu_ppb_screen)
             {
+                case SCREEN_PPB_OCXO_MODEL:
+                    if(ee_storage.ocxo_model != ocxo_model)
+                    {   // Save changes
+                        ee_storage.ocxo_model = ocxo_model;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_PPB_ALGO:
+                    if(ee_storage.correction_algorithm != displayed_correction_algorithm)
+                    {   // Make sure correction algo and correction are consistant before activating new algo
+                        // Reset correction factor to default value when algo is changed
+                        correction_factor = get_default_correction_factor(displayed_correction_algorithm);
+                        correction_algorithm = displayed_correction_algorithm;
+                        // Save changes
+                        ee_storage.correction_algorithm = correction_algorithm;
+                        ee_storage.correction_factor = correction_factor;
+                        EE_Write();
+                    }
+                    break;
+                case SCREEN_PPB_CORRECTION_FACTOR:
+                    if(ee_storage.correction_factor != correction_factor)
+                    {   // Save changes
+                        ee_storage.correction_factor = correction_factor;
+                        EE_Write();
+                    }
+                    break;
                 case SCREEN_PPB_AUTO_SAVE_PWM:
                     if(ee_storage.pwm_auto_save != pwm_auto_save)
                     {   // Save changes

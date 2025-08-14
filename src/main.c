@@ -43,10 +43,31 @@ void gpsdo(void)
 
     EE_Init(&ee_storage, sizeof(ee_storage_t));
     EE_Read();
-    if (ee_storage.pwm == 0xffff) {
-        ee_storage.pwm = 38000;
+    // Read OCXO model first since we'll use it to choose PWM starting point
+    if (ee_storage.ocxo_model == 0xff) {
+        ee_storage.ocxo_model = OCXO_MODEL_UNKNOWN;
     }
-    TIM1->CCR2 = ee_storage.pwm;
+    gps_model = ee_storage.gps_model;
+    uint16_t startingPwm;
+    if (ee_storage.pwm == 0xffff) {
+        // Pwm not initialized choose starting point based on OCXO model
+        switch(ocxo_model)
+        {
+            case OCXO_MODEL_OX256B:
+                startingPwm = 54000;
+                break;
+            case OCXO_MODEL_ISOTEMP:
+            case OCXO_MODEL_UNKNOWN:
+            default:
+                startingPwm = 38000;
+                break;   
+        }
+    }
+    else {
+        // Use value stored in eeprom as a starting point
+        startingPwm = ee_storage.pwm;
+    }
+    TIM1->CCR2 = startingPwm;
     if (ee_storage.contrast == 0xff) {
         ee_storage.contrast = 80;
     }
@@ -115,11 +136,22 @@ void gpsdo(void)
         ee_storage.ppb_lock_threshold = DEFAULT_PPB_LOCK_THRESHOLD;
     }
     ppb_lock_threshold = ee_storage.ppb_lock_threshold;
+    // Correction algorithm
+    if (ee_storage.correction_algorithm == 0xff) {
+        ee_storage.correction_algorithm = CORRECTION_ALGO_FREDZO;
+    }
+    correction_algorithm = ee_storage.correction_algorithm;
+    // Correction factor
+    if (ee_storage.correction_factor == 0xffffffff) {
+        ee_storage.correction_factor = get_default_correction_factor(correction_algorithm);
+    }
+    correction_factor = ee_storage.correction_factor;
 
 
     gps_start_it();
 
     menu_set_gps_baudrate(ee_storage.gps_baudrate);
+    menu_set_correction_algorithm(correction_algorithm);
 
     LCD_Init();
 

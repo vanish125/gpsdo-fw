@@ -2,6 +2,7 @@
 #define _MENU_H_
 
 #include <stdbool.h>
+#include "int.h"
 
 // Char code for sat icons
 #define SAT_ICON_1_CODE         '-'//0x7F
@@ -33,6 +34,7 @@ extern uint32_t ppb_lock_threshold;
 
 void menu_set_current_menu(uint8_t current_menu);
 void menu_set_gps_baudrate(uint32_t baudrate);
+void menu_set_corretion_algorithm(correction_algo_type algo);
 bool rotary_get_click();
 void menu_run();
 void lcd_create_chars();

@@ -30,6 +30,18 @@ extern volatile bool     update_trend;
 extern volatile bool     gps_lock_status;
 extern          bool     ppb_lock_status;
 
+// For correction algorythms
+// OCXO models
+typedef enum { OCXO_MODEL_ISOTEMP, OCXO_MODEL_OX256B, OCXO_MODEL_UNKNOWN } ocxo_model_type;
+extern ocxo_model_type ocxo_model;
+// Correction algorithms
+typedef enum { CORRECTION_ALGO_DANKAR, CORRECTION_ALGO_FREDZO, CORRECTION_ALGO_ERIC_H } correction_algo_type;
+extern correction_algo_type correction_algorithm;
+extern uint32_t correction_factor;
+
 void update_contrast();
 
+uint32_t get_default_correction_factor(correction_algo_type algo);
+
+uint32_t increment_correction_factor_value(correction_algo_type algo, uint32_t value, int increment);
 #endif

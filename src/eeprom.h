@@ -24,6 +24,9 @@ typedef struct
     uint8_t  gps_date_format;
     uint8_t  gps_model;
     uint32_t ppb_lock_threshold;
+    uint8_t  ocxo_model;
+    uint8_t  correction_algorithm;
+    uint32_t correction_factor;
 } ee_storage_t;
 
 extern ee_storage_t ee_storage;

@@ -47,6 +47,13 @@ bool              ppb_lock_status  = false;
 const char spinner[]   = "\1\2\3";
 uint8_t    pps_spinner = 0;
 
+// For default PWM value
+ocxo_model_type  ocxo_model = OCXO_MODEL_UNKNOWN;
+// For correction algorythms
+correction_algo_type  correction_algorithm = CORRECTION_ALGO_FREDZO;
+uint32_t              correction_factor = 1;
+
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
     if (htim == &htim1) {
@@ -80,6 +87,108 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     }
 }
 
+static int32_t compute_square_adjustment(int32_t error, uint32_t factor, uint32_t factor_increment)
+{
+    int32_t result = ((float)(abs(error) * error))*((factor/10)+factor_increment);
+    // Prevent from returning 0
+    if(result == 0) result = ((error>=0) ? 1 : -1);
+    return result;
+}
+
+void dankar_correction_algo(int32_t current_error)
+{
+    if (current_error != 0) {
+        // Use error^2 to adjust PWM for larger errors, but preserve sign.
+        // Make even smaller adjustments close to 0.
+        // This is all just guesses and should be investigated more fully.
+        int32_t adjustment = 0;
+
+        if (abs(current_error) > 10) {
+            adjustment = compute_square_adjustment(current_error,correction_factor,1);
+        } else if (abs(current_error) > 2) {
+            adjustment = compute_square_adjustment(current_error,correction_factor,0);
+        } else {
+            adjustment = current_error;
+        }
+        // Apply it
+        TIM1->CCR2 -= adjustment;
+        ppb_correction = -adjustment;
+    }
+    else {
+        ppb_correction = 0;
+    }
+}
+
+void fredzo_correction_algo(int32_t current_error)
+{
+    if (current_error != 0) {
+        int32_t adjustment = 0;
+        if (abs(current_error) > 10) {
+            adjustment = compute_square_adjustment(current_error,correction_factor,4);
+        } else if (abs(current_error) >= 8) {
+            adjustment = compute_square_adjustment(current_error,correction_factor,3);
+        } else if (abs(current_error) >= 6) {
+            adjustment = compute_square_adjustment(current_error,correction_factor,2);
+        } else if (abs(current_error) >= 4) {
+            adjustment = compute_square_adjustment(current_error,correction_factor,1);
+        } else if (abs(current_error) >= 2) {
+            adjustment = compute_square_adjustment(current_error,correction_factor,0);
+        } else {
+            adjustment = current_error;
+        }
+        // Apply it
+        TIM1->CCR2 -= adjustment;
+        ppb_correction = -adjustment;
+    }
+    else {
+        ppb_correction = 0;
+    }
+}
+
+void eric_h_correction_algo()
+{
+    int32_t current_ppb = frequency_get_ppb();
+    int32_t adjustment = 0;
+
+    if (    abs(current_ppb) > 0
+            && current_ppb != 0xFFFF)
+    {
+        const int factor = 300;
+        int interval = 1;
+
+        // Calculate adjustment.
+        adjustment = -current_ppb / factor;
+        if (adjustment == 0)
+        {
+            // Adjustment is less than 1 per interval.
+            adjustment = current_ppb > 0 ? -1 : 1;
+            interval = factor / (abs(current_ppb) % factor);
+        }
+
+        // Apply adjustment.
+        if (device_uptime % interval == 0)
+        {
+            if ((TIM1->CCR2 + adjustment) > 0xFFFF)
+            {
+                TIM1->CCR2 = 0xFFFF;
+            }
+            else if ((((int32_t)TIM1->CCR2) + adjustment) < 0)
+            {
+                TIM1->CCR2 = 0;
+            }
+            else
+            {
+                TIM1->CCR2 += adjustment;
+            }
+        }
+        else
+        {
+            adjustment = 0;
+        }
+    }
+    ppb_correction = adjustment;
+}
+
 // This gets run each time PPS goes high
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 {
@@ -109,33 +218,29 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
                     pps_shift_count = 0;
                 }
 
-                // Frequency detection vor VCO adjustment
+                // Frequency detection for VCO adjustment
                 frequency = capture - previous_capture + /*(TIM1->ARR + 1)*/ 65536 * timer_overflows;
 
                 int32_t current_error = frequency_get_error();
 
-                if (current_error != 0) {
-                    // Use error^3 to adjust PWM for larger errors, but preserve sign.
-                    // Make even smaller adjustments close to 0.
-                    // This is all just guesses and should be investigated more fully.
-                    int32_t adjustment = 0;
-
-                    if (abs(current_error) > 10) {
-                        adjustment = abs(current_error) * current_error * 2;
-                    } else if (abs(current_error) > 2) {
-                        adjustment = abs(current_error) * current_error;
-                    } else {
-                        adjustment = current_error;
-                    }
-
-                    // Apply it
-                    TIM1->CCR2 -= adjustment;
-
-                    ppb_correction = -adjustment;
+                // Choos from 3 correction algorithms :
+                // - Dankar (original code from Dankar + added correction factor defaulted to values that match the original code)
+                // - Fredzo (same logic as dankar's algo, but with faster correction when frequency error is >= 2)
+                // - Eric-H (algo based on ppm value rather than frequency error (uses 128s rolling average rather than instant values))
+                switch(correction_algorithm)
+                {
+                    case CORRECTION_ALGO_DANKAR:
+                        dankar_correction_algo(current_error);
+                        break;
+                    case CORRECTION_ALGO_ERIC_H:
+                        eric_h_correction_algo();
+                        break;
+                    default:
+                    case CORRECTION_ALGO_FREDZO:
+                        fredzo_correction_algo(current_error);
+                        break;
                 }
-                else {
-                    ppb_correction = 0;
-                }
+
                 // Save values for ppb and pps display
                 ppb_frequency = frequency;
                 ppb_error = current_error;
@@ -170,4 +275,57 @@ void update_contrast()
 {
     uint32_t pwm_value = 0xFFFF - (contrast * 0xFFFF / 100);
     TIM1->CCR3 = pwm_value;
+}
+
+uint32_t get_default_correction_factor(correction_algo_type algo)
+{
+    switch(algo)
+    {
+        case CORRECTION_ALGO_DANKAR:
+            return 10;
+            break;
+        case CORRECTION_ALGO_ERIC_H:
+            return 300;
+            break;
+        default:
+        case CORRECTION_ALGO_FREDZO:
+            return 10;
+            break;
+    }
+}
+
+uint32_t increment_correction_factor_value(correction_algo_type algo, uint32_t value, int increment)
+{
+    uint32_t minVal;
+    uint32_t maxVal;
+    uint32_t incFactor;
+    switch(algo)
+    {
+        case CORRECTION_ALGO_DANKAR:
+            minVal = 1;
+            maxVal = 60;
+            incFactor = 1;
+            break;
+        case CORRECTION_ALGO_ERIC_H:
+            minVal = 10;
+            maxVal = 600;
+            incFactor = 10;
+            break;
+        default:
+        case CORRECTION_ALGO_FREDZO:
+            minVal = 1;
+            maxVal = 60;
+            incFactor = 1;
+            break;
+    }
+    uint32_t new_factor = value + (incFactor*increment);
+    if(new_factor < minVal)
+    {
+        new_factor = minVal;
+    }
+    else if(new_factor > maxVal)
+    {
+        new_factor = maxVal;
+    }
+    return new_factor;
 }
