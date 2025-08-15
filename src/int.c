@@ -346,11 +346,11 @@ uint32_t get_default_warmup_time(ocxo_model_type model)
     switch(model)
     {
         case OCXO_MODEL_OX256B:
-            return 80;
+            return 100;
             break;
         default:
         case OCXO_MODEL_ISOTEMP:
-            return 40;
+            return 70;
             break;
     }
 }
