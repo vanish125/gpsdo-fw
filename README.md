@@ -6,9 +6,12 @@ This is an alternative firmware for the BH3SAP GPSDO sold on various platforms.
 
 ### Usage
 
-Power on the device with GPS antenna connected. Wait a long while for the PPB to reach close to zero. The used PWM value can then be stored in flash by going to `PWM` menu and press the encoder twice (a message will be shown after the first press).
+Power on the device with GPS antenna connected. Wait a long while for the PPB to reach close to zero. When the PPB is stabilized close to zero, the GPSDO is considered locked (padlock icon) and it will automatically save the current PWM value in flash.
 
-This PWM will then be used on the next boot, and if no GPS antenna is connected, it will not be adjusted further.
+This PWM value will then be used on the next boot as a startup value.
+
+The current PWM value can also be manually saved by going to `PWM` menu and press the encoder twice (a message will be shown after the first press).
+
 
 The [original manual](https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766ef8beb795172a6fa325e783569361913e/doc/gpsdo-documentation.pdf) for the device talks about running the device without a GPS antenna after calibration, but I would advice against that since the oscillator seems sensitive to both ambient temperature, vibrations and orientation. Best results will be had when the GPS antenna is connected at all times.
 
@@ -33,6 +36,14 @@ Here is the menu tree :
   - `Frequency`: the measured current MCU frequency (based on the number ot ticks counted between two GPS PPS pulses, should be around 70 000 000 for 70 MHz)
   - `Error`: the last measured frequency error (in Hz)
   - `Correction`: the last correction applied to PWM value
+  - `PWM`: the current PWM value
+  - `OCXO model`: press to set the OCXO model installed on your GPSDO to ISOTEMP or OX256B (this will adjust warmup time and default PWM value)
+  - `Warm-up duration`: press to set the warmup duration is seconds (time to wait after boot to let the OCXO warm-up before starting PWM correction)
+  - `Algorithm selection`: press to select the algorithm used to adjust PWM value ; there are 3 available algorithms :
+      - `Eric-H` (default): Based on ppm value rather than frequency error (uses 128s rolling average rather than instant values)
+      - `Dankar`: Original code from Dankar using square value of instant frequency error as PWM correction
+      - `Fredzo`: Same logic as dankar's, but with faster correction when frequency error is >= 2
+  - `Correction factor`: press to adjust the responsiveness of the correction algorithm
   - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
   - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
   - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
