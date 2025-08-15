@@ -52,7 +52,8 @@ ocxo_model_type  ocxo_model = OCXO_MODEL_UNKNOWN;
 // For correction algorythms
 correction_algo_type  correction_algorithm = CORRECTION_ALGO_FREDZO;
 uint32_t              correction_factor = 1;
-
+// Warmup time in seconds
+uint32_t warmup_time_seconds = 0;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
@@ -142,13 +143,9 @@ void fredzo_correction_algo(int32_t current_error)
 {
     if (current_error != 0) {
         int32_t adjustment = 0;
-        if (abs(current_error) > 10) {
-            adjustment = compute_square_adjustment(current_error,correction_factor,4);
-        } else if (abs(current_error) >= 8) {
-            adjustment = compute_square_adjustment(current_error,correction_factor,3);
-        } else if (abs(current_error) >= 6) {
+        if (abs(current_error) >= 16) {
             adjustment = compute_square_adjustment(current_error,correction_factor,2);
-        } else if (abs(current_error) >= 4) {
+        } else if (abs(current_error) >= 8) {
             adjustment = compute_square_adjustment(current_error,correction_factor,1);
         } else if (abs(current_error) >= 2) {
             adjustment = compute_square_adjustment(current_error,correction_factor,0);
@@ -205,31 +202,33 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
         capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
 
         uint32_t current_tick = HAL_GetTick();
-        if (allow_adjustment) {
-            // Ignore first capture and do a sanity check on elapsed time since previous PPS
-            if (!first && current_tick - last_pps < 1300) {
-                // See if we need to resync MCU PPS Out
-                pps_error = (capture - pps_capture + /*(TIM1->ARR + 1)*/ 65536 * pps_overflows) - 70000000 /*HAL_RCC_GetHCLKFreq()*/;
-                if(pps_sync_on && (sync_pps_out ||(abs(pps_error) >= pps_sync_threshold)))
-                {
-                    pps_shift_count++;
-                    if(sync_pps_out || (pps_shift_count > pps_sync_delay))
-                    {   // Force sync by reseting TIM2
-                        TIM2->CNT = TIM2->ARR;
-                        pps_sync_count++;
-                        pps_shift_count = 0;
-                        sync_pps_out = false;
-                    }
-                }
-                else
-                {   // Reset shift count if we are below threshold
+        // Ignore first capture and do a sanity check on elapsed time since previous PPS
+        if (!first && current_tick - last_pps < 1300) {
+            // See if we need to resync MCU PPS Out
+            pps_error = (capture - pps_capture + /*(TIM1->ARR + 1)*/ 65536 * pps_overflows) - 70000000 /*HAL_RCC_GetHCLKFreq()*/;
+            if(pps_sync_on && (sync_pps_out ||(abs(pps_error) >= pps_sync_threshold)))
+            {
+                pps_shift_count++;
+                if(sync_pps_out || (pps_shift_count > pps_sync_delay))
+                {   // Force sync by reseting TIM2
+                    TIM2->CNT = TIM2->ARR;
+                    pps_sync_count++;
                     pps_shift_count = 0;
+                    sync_pps_out = false;
                 }
+            }
+            else
+            {   // Reset shift count if we are below threshold
+                pps_shift_count = 0;
+            }
 
-                // Frequency detection for VCO adjustment
-                frequency = capture - previous_capture + /*(TIM1->ARR + 1)*/ 65536 * timer_overflows;
+            // Frequency detection for VCO adjustment
+            frequency = capture - previous_capture + /*(TIM1->ARR + 1)*/ 65536 * timer_overflows;
 
-                int32_t current_error = frequency_get_error();
+            int32_t current_error = frequency_get_error();
+
+            if (allow_adjustment) 
+            {   // No crrection during warmup
 
                 // Choos from 3 correction algorithms :
                 // - Dankar (original code from Dankar + added correction factor defaulted to values that match the original code)
@@ -248,29 +247,33 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
                         fredzo_correction_algo(current_error);
                         break;
                 }
+            }
 
-                // Save values for ppb and pps display
-                ppb_frequency = frequency;
-                ppb_error = current_error;
-                ppb_millis = current_tick - last_pps - 1000;
-                pps_millis = (pps_error/7); // Clock is 70 MHz and we want the value in 10s of microseconds so 10 0000 000 / 70 000 000 = 1/7
+            // Save values for ppb and pps display
+            ppb_frequency = frequency;
+            ppb_error = current_error;
+            ppb_millis = current_tick - last_pps - 1000;
+            pps_millis = (pps_error/7); // Clock is 70 MHz and we want the value in 10s of microseconds so 10 0000 000 / 70 000 000 = 1/7
 
+            if (allow_adjustment) 
+            {   // Also remove warmup samples from circular buffer
                 circbuf_add(&circular_buffer, current_error);
                 if (num_samples < CIRCULAR_BUFFER_LEN)
                     num_samples++;
             }
-
-            previous_capture = capture;
-            timer_overflows  = 0;
-            first            = 0;
         }
+
+        previous_capture = capture;
+        timer_overflows  = 0;
+        first            = 0;
+
         // Update last PPS time
         last_pps         = current_tick;
         // Update state icon
         current_state_icon = spinner[pps_spinner];
         pps_spinner   = (pps_spinner + 1) % strlen(spinner);
         refresh_screen = true;
-        update_trend = true;
+        update_trend = allow_adjustment;
         if(!gps_lock_status)
         {   // Update GPS lock status
             gps_lock_status = true;
@@ -337,3 +340,19 @@ uint32_t increment_correction_factor_value(correction_algo_type algo, uint32_t v
     }
     return new_factor;
 }
+
+uint32_t get_default_warmup_time(ocxo_model_type model)
+{
+    switch(model)
+    {
+        case OCXO_MODEL_OX256B:
+            return 80;
+            break;
+        default:
+        case OCXO_MODEL_ISOTEMP:
+            return 40;
+            break;
+    }
+}
+
+

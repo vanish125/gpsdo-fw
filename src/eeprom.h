@@ -27,6 +27,7 @@ typedef struct
     uint8_t  ocxo_model;
     uint8_t  correction_algorithm;
     uint32_t correction_factor;
+    uint32_t warmup_time_seconds;
 } ee_storage_t;
 
 extern ee_storage_t ee_storage;

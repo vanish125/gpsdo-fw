@@ -21,9 +21,11 @@ void    frequency_start();
 int32_t frequency_get();
 int32_t frequency_get_error();
 void    frequency_allow_adjustment(bool allow);
+bool    frequency_adjustment_allowed();
 
 // Returns ppb * 100
 int32_t frequency_get_ppb();
 
 bool    frequency_is_stable(int32_t threshold);
+
 #endif

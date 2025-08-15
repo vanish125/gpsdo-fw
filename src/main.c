@@ -14,29 +14,7 @@
 
 /// All times in ms
 #define PPS_PULSE_WIDTH         100
-#define VCO_ADJUSTMENT_DELAY    3000
 #define GPS_FRAME_WAIT_DELAY    10000
-
-void warmup()
-{
-    char     buf[9];
-    uint32_t warmup_time = 300;
-    LCD_Clear();
-    while (warmup_time != 0) {
-        LCD_Puts(0, 0, " WARMUP");
-        sprintf(buf, "  %ld  ", warmup_time);
-        LCD_Puts(0, 1, buf);
-        warmup_time--;
-
-        for (int i = 0; i < 200; i++) {
-            if (rotary_get_click()) {
-                warmup_time = 0;
-                break;
-            }
-            HAL_Delay(5);
-        }
-    }
-}
 
 void gpsdo(void)
 {
@@ -147,6 +125,11 @@ void gpsdo(void)
         ee_storage.correction_factor = get_default_correction_factor(correction_algorithm);
     }
     correction_factor = ee_storage.correction_factor;
+    // Warmup time
+    if (ee_storage.warmup_time_seconds == 0xffffffff) {
+        ee_storage.warmup_time_seconds = get_default_warmup_time(ocxo_model);
+    }
+    warmup_time_seconds = ee_storage.warmup_time_seconds;
 
 
     gps_start_it();
@@ -178,7 +161,7 @@ void gpsdo(void)
             HAL_GPIO_WritePin(PPS_OUTPUT_GPIO_Port, PPS_OUTPUT_Pin, 0);
             pps_out_up = false;
         }
-        if (!vco_adjust_allowed && now >= VCO_ADJUSTMENT_DELAY) 
+        if (!vco_adjust_allowed && (now >= (warmup_time_seconds*1000)))
         {   // Start adjusting the VCO after some time
             frequency_allow_adjustment(true);
             vco_adjust_allowed = true;

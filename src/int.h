@@ -38,10 +38,14 @@ extern ocxo_model_type ocxo_model;
 typedef enum { CORRECTION_ALGO_DANKAR, CORRECTION_ALGO_FREDZO, CORRECTION_ALGO_ERIC_H } correction_algo_type;
 extern correction_algo_type correction_algorithm;
 extern uint32_t correction_factor;
+extern uint32_t warmup_time_seconds;
 
 void update_contrast();
 
 uint32_t get_default_correction_factor(correction_algo_type algo);
 
 uint32_t increment_correction_factor_value(correction_algo_type algo, uint32_t value, int increment);
+
+uint32_t get_default_warmup_time(ocxo_model_type model);
+
 #endif

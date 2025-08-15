@@ -37,6 +37,8 @@ void frequency_start()
 
 void frequency_allow_adjustment(bool allow) { allow_adjustment = allow; }
 
+bool frequency_adjustment_allowed() { return allow_adjustment; }
+
 int32_t frequency_get() { return frequency; }
 
 int32_t frequency_get_error()
