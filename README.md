@@ -6,9 +6,12 @@ This is an alternative firmware for the BH3SAP GPSDO sold on various platforms.
 
 ### Usage
 
-Power on the device with GPS antenna connected. Wait a long while for the PPB to reach close to zero. The used PWM value can then be stored in flash by going to `PWM` menu and press the encoder twice (a message will be shown after the first press).
+Power on the device with GPS antenna connected. Wait a long while for the PPB to reach close to zero. When the PPB is stabilized close to zero, the GPSDO is considered locked (padlock icon) and it will automatically save the current PWM value in flash.
 
-This PWM will then be used on the next boot, and if no GPS antenna is connected, it will not be adjusted further.
+This PWM value will then be used on the next boot as a startup value.
+
+The current PWM value can also be manually saved by going to `PWM` menu and press the encoder twice (a message will be shown after the first press).
+
 
 The [original manual](https://raw.githubusercontent.com/fredzo/gpsdo-fw/b1f1766ef8beb795172a6fa325e783569361913e/doc/gpsdo-documentation.pdf) for the device talks about running the device without a GPS antenna after calibration, but I would advice against that since the oscillator seems sensitive to both ambient temperature, vibrations and orientation. Best results will be had when the GPS antenna is connected at all times.
 
@@ -33,6 +36,14 @@ Here is the menu tree :
   - `Frequency`: the measured current MCU frequency (based on the number ot ticks counted between two GPS PPS pulses, should be around 70 000 000 for 70 MHz)
   - `Error`: the last measured frequency error (in Hz)
   - `Correction`: the last correction applied to PWM value
+  - `PWM`: the current PWM value
+  - `OCXO model`: press to set the OCXO model installed on your GPSDO to ISOTEMP or OX256B (this will adjust warmup time and default PWM value)
+  - `Warm-up duration`: press to set the warmup duration is seconds (time to wait after boot to let the OCXO warm-up before starting PWM correction)
+  - `Algorithm selection`: press to select the algorithm used to adjust PWM value ; there are 3 available algorithms :
+      - `Eric-H` (default): Based on ppm value rather than frequency error (uses 128s rolling average rather than instant values)
+      - `Dankar`: Original code from Dankar using square value of instant frequency error as PWM correction
+      - `Fredzo`: Same logic as dankar's, but with faster correction when frequency error is >= 2
+  - `Correction factor`: press to adjust the responsiveness of the correction algorithm
   - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
   - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
   - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
@@ -50,7 +61,7 @@ Here is the menu tree :
   - `Geoid`: the Geoid-to-ellipsoid separation (in meters)
   - `Sat. #`: the numner of satellites
   - `HDOP`: the current Horizontal Dilution Of Precision value
-  - `Baudrate`: set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly)
+  - `Baudrate`: *don't mess with this unless you know what you are doing !* set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly *BUT* ATGM336H modlules installed in the GPSDO have been reportd to have a weak battery and don't retain this setting for a very long time... passed this time the module will return to default 9600 bauds and breaking the communication with the bluepill (see Troubleshooting section))
   - `Time Zone offset`: set the number of hours (-14/+14) to shift the displayed time from UTC to match local time
   - `Date Format`: set the date format (either `dd/mm/yy` (default value), `mm/dd/yy`, `yy/mm/dd`, `dd.mm.yy` or `yy-mm-dd`)
   - `Model`: displays the detected GPS module model, press to manually set the GPS module model
@@ -119,6 +130,23 @@ You can now launch the [STM32CubeProgrammer software](https://www.st.com/en/deve
 
 For video instructions, you can check [Tony Albus's BH3SAP GPSDO review at 7'20''](https://www.youtube.com/watch?v=FxD5QzaOiZ4&t=440s): 
 [![Tony Albus's BH3SAP GPSDO review](https://img.youtube.com/vi/FxD5QzaOiZ4/0.jpg)](https://www.youtube.com/watch?v=FxD5QzaOiZ4&t=440s)
+
+### Troubleshooting
+
+#### No time on the display
+If the current time is not displayed on the main screen, it most likely is because the UART communication between the bluepill board and the GPS module is broken.
+
+#### Flickering screen / impossible to get the GPSDO to lock
+Later versions of the GPSDO come with a different OCXO than the original ISOTEMP model.
+This new OCXO, a Bowei OX256B-T-LU-V-10M, has a weaker output signal than the ISOTEMP.
+This weaker signal is not strong enough to drive the bluepill OSCin input through the onboard quartz like the ISOTEMP does.
+The good new is it should not need to do so if the wiring of the GPSDO had been done correctly!...
+So far, all produced GPSDO nits have been reported to have a wrong connection bellow the bluepill board, sending the OSCXO output to PIN6 (OSCout) rather than PIN5 (OSCin).
+This can easily be fixed by resoldering the red wire to the other pin of the quartz (on C13 side).
+Wrong pin:
+![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo-wrong-pin.jpg?raw=true)
+Fix:
+![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo-fix-pin.jpg?raw=true)
 
 ### Hardware Extensions
 
