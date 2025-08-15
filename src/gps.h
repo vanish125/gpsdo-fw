@@ -30,6 +30,8 @@ typedef enum { DATE_FORMAT_UTC = 0, DATE_FORMAT_US, DATE_FORMAT_ISO, DATE_FORMAT
 extern date_format      gps_date_format;
 extern int8_t   gps_time_offset;
 extern int8_t   gps_day_offset;
+// Last tiem a frame was received
+extern uint32_t last_frame_receive_time;
 
 void gps_start_it();
 void gps_parse(char* line);

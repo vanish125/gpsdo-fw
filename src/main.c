@@ -15,6 +15,7 @@
 /// All times in ms
 #define PPS_PULSE_WIDTH         100
 #define VCO_ADJUSTMENT_DELAY    3000
+#define GPS_FRAME_WAIT_DELAY    10000
 
 void warmup()
 {
@@ -181,6 +182,11 @@ void gpsdo(void)
         {   // Start adjusting the VCO after some time
             frequency_allow_adjustment(true);
             vco_adjust_allowed = true;
+        }
+        if((now - last_frame_receive_time) > GPS_FRAME_WAIT_DELAY)
+        {   // We've not been receiving a frame from GPS for too long, try and restart UART
+            gps_reconfigure_uart(gps_baudrate);
+            last_frame_receive_time = now;
         }
         
         gps_read();

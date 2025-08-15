@@ -36,6 +36,8 @@ size_t   gps_line_len     = 0;
 gps_model_type  gps_model       = GPS_MODEL_UNKNOWN;
 date_format     gps_date_format = DATE_FORMAT_UTC;
 
+// Store last frame receive time
+uint32_t last_frame_receive_time = 0;
 
 
 #define FIFO_BUFFER_SIZE 256
@@ -600,6 +602,8 @@ void gps_parse(char* line)
         strncpy(gps_last_frame,line+3,sizeof(gps_last_frame)-1);
         gps_last_frame_changed = true;
     }
+    // Get reception time
+    last_frame_receive_time = HAL_GetTick();
 }
 
 #define	SEND_BUFFER_SIZE	FIFO_BUFFER_SIZE

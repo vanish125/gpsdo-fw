@@ -92,7 +92,26 @@ static int32_t compute_square_adjustment(int32_t error, uint32_t factor, uint32_
     int32_t result = ((float)(abs(error) * error))*((factor/10)+factor_increment);
     // Prevent from returning 0
     if(result == 0) result = ((error>=0) ? 1 : -1);
+    // Limit adjustment to reasonable values
+    if(result > 1000) result = 1000;
+    if(result < -1000) result = -1000;
     return result;
+}
+
+static void apply_adjustment(int32_t adjustment)
+{
+    if ((TIM1->CCR2 + adjustment) > 0xFFFF)
+    {
+        TIM1->CCR2 = 0xFFFF;
+    }
+    else if ((((int32_t)TIM1->CCR2) + adjustment) < 0)
+    {
+        TIM1->CCR2 = 0;
+    }
+    else
+    {
+        TIM1->CCR2 += adjustment;
+    }
 }
 
 void dankar_correction_algo(int32_t current_error)
@@ -111,7 +130,7 @@ void dankar_correction_algo(int32_t current_error)
             adjustment = current_error;
         }
         // Apply it
-        TIM1->CCR2 -= adjustment;
+        apply_adjustment(-adjustment);
         ppb_correction = -adjustment;
     }
     else {
@@ -137,7 +156,7 @@ void fredzo_correction_algo(int32_t current_error)
             adjustment = current_error;
         }
         // Apply it
-        TIM1->CCR2 -= adjustment;
+        apply_adjustment(-adjustment);
         ppb_correction = -adjustment;
     }
     else {
@@ -168,18 +187,7 @@ void eric_h_correction_algo()
         // Apply adjustment.
         if (device_uptime % interval == 0)
         {
-            if ((TIM1->CCR2 + adjustment) > 0xFFFF)
-            {
-                TIM1->CCR2 = 0xFFFF;
-            }
-            else if ((((int32_t)TIM1->CCR2) + adjustment) < 0)
-            {
-                TIM1->CCR2 = 0;
-            }
-            else
-            {
-                TIM1->CCR2 += adjustment;
-            }
+            apply_adjustment(adjustment);
         }
         else
         {
