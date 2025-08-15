@@ -61,7 +61,7 @@ Here is the menu tree :
   - `Geoid`: the Geoid-to-ellipsoid separation (in meters)
   - `Sat. #`: the numner of satellites
   - `HDOP`: the current Horizontal Dilution Of Precision value
-  - `Baudrate`: *don't mess with this unless you know what you are doing !* set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly *BUT* ATGM336H modlules installed in the GPSDO have been reportd to have a weak battery and don't retain this setting for a very long time... passed this time the module will return to default 9600 bauds and breaking the communication with the bluepill (see Troubleshooting section))
+  - `Baudrate`(__*don't mess with this unless you know what you are doing !*__): set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly *BUT* ATGM336H modules installed in the GPSDO have been reported to have a weak battery and don't retain this setting for a very long time... passed this time the module will return to default 9600 bauds and breaking the communication with the bluepill (see [Troubleshooting section](https://github.com/fredzo/gpsdo-fw/blob/main/README.md#no-time-on-the-display))
   - `Time Zone offset`: set the number of hours (-14/+14) to shift the displayed time from UTC to match local time
   - `Date Format`: set the date format (either `dd/mm/yy` (default value), `mm/dd/yy`, `yy/mm/dd`, `dd.mm.yy` or `yy-mm-dd`)
   - `Model`: displays the detected GPS module model, press to manually set the GPS module model
@@ -137,16 +137,20 @@ For video instructions, you can check [Tony Albus's BH3SAP GPSDO review at 7'20'
 If the current time is not displayed on the main screen, it most likely is because the UART communication between the bluepill board and the GPS module is broken.
 
 #### Flickering screen / impossible to get the GPSDO to lock
-Later versions of the GPSDO come with a different OCXO than the original ISOTEMP model.
-This new OCXO, a Bowei OX256B-T-LU-V-10M, has a weaker output signal than the ISOTEMP.
-This weaker signal is not strong enough to drive the bluepill OSCin input through the onboard quartz like the ISOTEMP does.
-The good new is it should not need to do so if the wiring of the GPSDO had been done correctly!...
-So far, all produced GPSDO nits have been reported to have a wrong connection bellow the bluepill board, sending the OSCXO output to PIN6 (OSCout) rather than PIN5 (OSCin).
-This can easily be fixed by resoldering the red wire to the other pin of the quartz (on C13 side).
+Later versions of the GPSDO come with a different OCXO than the original ISOTEMP model. This new OCXO, a Bowei OX256B-T-LU-V-10M, has a weaker output signal than the ISOTEMP. This weaker signal is not strong enough to drive the bluepill OSCin input through the onboard quartz like the ISOTEMP does.
+
+The good news is that it should not need to do so if the wiring of the GPSDO had been done correctly!...
+
+So far, all produced GPSDO units have been reported to have a wrong connection bellow the bluepill board, sending the OCXO output to PIN6 (OSCout) rather than PIN5 (OSCin). This can easily be fixed by resoldering the red wire to the other pin of the quartz (on C13 side) like shown bellow.
+
 Wrong pin:
 ![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo-wrong-pin.jpg?raw=true)
+
+
 Fix:
 ![GPS Passthrough](https://github.com/fredzo/gpsdo-fw/blob/main/doc/gpsdo-fix-pin.jpg?raw=true)
+
+This wrong wiring does not seem to have an impact on GPSDOs with ISOTEMP OCXO installed, that might explain why it has not beed detected at design time.
 
 ### Hardware Extensions
 
