@@ -61,7 +61,7 @@ Here is the menu tree :
   - `Geoid`: the Geoid-to-ellipsoid separation (in meters)
   - `Sat. #`: the numner of satellites
   - `HDOP`: the current Horizontal Dilution Of Precision value
-  - `Baudrate`(__*don't mess with this unless you know what you are doing !*__): set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly *BUT* ATGM336H modules installed in the GPSDO have been reported to have a weak battery and don't retain this setting for a very long time... passed this time the module will return to default 9600 bauds, breaking the communication with the bluepill (see [Troubleshooting section](https://github.com/fredzo/gpsdo-fw/blob/main/README.md#no-time-on-the-display))
+  - `Baudrate`(__*don't mess with this unless you know what you are doing !*__): set the GPS UART communication baudrate (for GPSDO equipped with ATGM336H GPS modules, changing this will also send a command to change the GPS module baudrate accordingly *BUT* ATGM336H modules installed in the GPSDO have been reported to have a weak battery and don't retain this setting for a very long time... passed this time the module will return to default 9600 bauds, breaking the communication with the bluepill (see [Troubleshooting section](https://github.com/fredzo/gpsdo-fw/blob/main/README.md#no-time-on-the-display)))
   - `Time Zone offset`: set the number of hours (-14/+14) to shift the displayed time from UTC to match local time
   - `Date Format`: set the date format (either `dd/mm/yy` (default value), `mm/dd/yy`, `yy/mm/dd`, `dd.mm.yy` or `yy-mm-dd`)
   - `Model`: displays the detected GPS module model, press to manually set the GPS module model
