@@ -169,7 +169,7 @@ void eric_h_correction_algo()
     if (    abs(current_ppb) > 0
             && current_ppb != 0xFFFF)
     {
-        const int factor = 300;
+        const int factor = correction_factor;
         int interval = 1;
 
         // Calculate adjustment.
