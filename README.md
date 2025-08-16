@@ -43,7 +43,9 @@ Here is the menu tree :
       - `Eric-H` (default): Based on ppm value rather than frequency error (uses 128s rolling average rather than instant values)
       - `Dankar`: Original code from Dankar using square value of instant frequency error as PWM correction
       - `Fredzo`: Same logic as dankar's, but with faster correction when frequency error is >= 2
-  - `Correction factor`: press to adjust the responsiveness of the correction algorithm
+  - `Correction factor`: press to adjust the responsiveness of the correction algorithm :
+      - For `Eric-H` algorithm, the default correction factor is 300, increasing it will slow down the PWM adjustment
+      - For `Dankar` and `Fredzo` algorithms, the default correction factor is 10, a value bellow 10 will slow down PWM adjustment and a value above 10 will increase it
   - `Millis`: the gap in milliseconds between GPS PPS reference and MCU calculated PPS (should be 0)
   - `PWM auto save`: press to set the PWM auto-save status (when set to `ON`, PWM value will automatically be saved the first time PPB mean value reaches 0)
   - `PPS auto resync`: press to set the PWM auto-sync status (when set to `ON`, MCU Controlled PPS output will automatically be resynced to GPS PPS Output the first time PPB mean value reaches 0)
