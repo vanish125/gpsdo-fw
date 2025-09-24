@@ -328,7 +328,87 @@ static bool change_time(char* time_source, char* time_dest, int correction, int 
     time_dest[1] = (char)((value%10)+'0');
     return overlap;
 }
+// Function to convert GPS date and time strings to a timestamp (seconds since epoch)
+// Assumes the date format is "dd/mm/yyyy" or "mm/dd/yyyy" and time is "hh:mm:ss"
+//  You'll need to adjust the date parsing logic based on your specific date format.
+// uint32_t gps_to_timestamp() {
+//     uint32_t timestamp = 0;
+//     int year = 0, month = 0, day = 0;
+//     int hour = 0, minute = 0, second = 0;
 
+//     // Parse Date
+//     if (sscanf(gps_date, "%d/%d/%d", &day, &month, &year) != 3) {
+//         // Handle parsing error.  Return 0 or some error value.
+//         printf("Error parsing date: %s\n", gps_date);
+//         return 0;
+//     }
+
+//     // Parse Time
+//     if (sscanf(gps_time, "%d:%d:%d", &hour, &minute, &second) != 3) {
+//         // Handle parsing error
+//         printf("Error parsing time: %s\n", gps_time);
+//         return 0;
+//     }
+
+//     // Adjust for year 1970.  This is important for timestamp calculation.
+//     year -= 1970;
+
+//     // Calculate the number of days since 1970.
+//     // This is a simplified calculation and does not account for leap years correctly.
+//     //  For more accurate calculations, you'll need to account for leap years.
+//     uint32_t days = (year * 365) + (year / 4);  // Approximate leap year calculation
+//     days += (month - 1) * 30;
+//     days += day;
+
+//     // Calculate total seconds
+//     timestamp = (days * 24 * 60 * 60) + (hour * 60 * 60) + (minute * 60) + second;
+
+//     return timestamp;
+// }
+// Improved leap year calculation
+bool is_leap_year(int year) {
+    return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+uint32_t gps_to_timestamp_accurate() {
+    int year = 0, month = 0, day = 0;
+    int hour = 0, minute = 0, second = 0;
+
+    if (sscanf(gps_date, "%d/%d/%d", &day, &month, &year) != 3) {
+        printf("Error parsing date: %s\n", gps_date);
+        return 0;
+    }
+
+    if (sscanf(gps_time, "%d:%d:%d", &hour, &minute, &second) != 3) {
+        printf("Error parsing time: %s\n", gps_time);
+        return 0;
+    }
+
+    // Calculate days since 1970.
+    int days = 0;
+    for (int y = 1970; y < year; ++y) {
+        if (is_leap_year(y)) {
+            days += 366;
+        } else {
+            days += 365;
+        }
+    }
+
+    // Add days for the current year
+    int days_in_month[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (is_leap_year(year)) {
+        days_in_month[2] = 29;
+    }
+    for (int m = 1; m < month; ++m) {
+        days += days_in_month[m];
+    }
+    days += day;
+
+    // Calculate total seconds
+    uint32_t timestamp = (days * 24 * 60 * 60) + (hour * 60 * 60) + (minute * 60) + second;
+
+    return timestamp;
+}
 // Maybe use X-CUBE-GNSS here?
 void gps_parse(char* line)
 {
@@ -603,6 +683,8 @@ void gps_parse(char* line)
         gps_last_frame_changed = true;
     }
     // Get reception time
+    uint32_t timestamp = gps_to_timestamp_accurate();
+    HAL_UART_Transmit_IT(&huart2, (uint8_t *)timestamp, sizeof(line));
     last_frame_receive_time = HAL_GetTick();
 }
 
@@ -631,12 +713,12 @@ void gps_read()
         }
     }
 
-    if (send_size) {
-        while (huart2.gState != HAL_UART_STATE_READY)
-            ;
-        memcpy(gps_send_buf, send_buf, SEND_BUFFER_SIZE);
-        HAL_UART_Transmit_IT(&huart2, gps_send_buf, send_size);
-    }
+    // if (send_size) {
+    //     while (huart2.gState != HAL_UART_STATE_READY)
+    //         ;
+    //     memcpy(gps_send_buf, send_buf, SEND_BUFFER_SIZE);
+    //     HAL_UART_Transmit_IT(&huart2, gps_send_buf, send_size);
+    // }
 
     send_size = 0;
     while (fifo_read(&fifo_buffer_comm, &c)) {
