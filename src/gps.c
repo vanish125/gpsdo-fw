@@ -375,12 +375,12 @@ uint32_t gps_to_timestamp_accurate() {
     int hour = 0, minute = 0, second = 0;
 
     if (sscanf(gps_date, "%d/%d/%d", &day, &month, &year) != 3) {
-        printf("Error parsing date: %s\n", gps_date);
+        // printf("Error parsing date: %s\n", gps_date);
         return 0;
     }
 
     if (sscanf(gps_time, "%d:%d:%d", &hour, &minute, &second) != 3) {
-        printf("Error parsing time: %s\n", gps_time);
+        // printf("Error parsing time: %s\n", gps_time);
         return 0;
     }
 
